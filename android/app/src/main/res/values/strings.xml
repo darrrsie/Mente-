@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mente &amp; Movimento</string>
+    <string name="title_activity_main">Mente &amp; Movimento</string>
+    <string name="package_name">com.jardimdamente.app</string>
+    <string name="custom_url_scheme">com.jardimdamente.app</string>
+</resources>

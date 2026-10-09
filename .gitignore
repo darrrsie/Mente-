@@ -1,0 +1,16 @@
+node_modules/
+.npm-cache/
+.gradle-user/
+dist/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.keystore
+*.jks
+release/*
+!release/Mente-e-Movimento-Android-debug.apk
+!release/SHA256.txt
+!release/apk-report.json
+.tmp-cdp/
+preview-map.png

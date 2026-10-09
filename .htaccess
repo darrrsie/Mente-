@@ -1,0 +1,5 @@
+# The XAMPP download page must not expose source, Git history or signing keys.
+Options -Indexes
+RewriteEngine On
+RewriteRule ^(?:index\.html|assets/icon-512\.png|release/Mente-e-Movimento-Android-debug\.apk|release/SHA256\.txt)?$ - [END]
+RewriteRule ^ - [F]

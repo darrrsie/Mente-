@@ -1,0 +1,30 @@
+{
+  "name": "mente-e-movimento",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build:mobile": "node scripts/build-mobile.mjs",
+    "apk": "node scripts/build-apk.mjs",
+    "pretest": "node scripts/build-mobile.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "network:check": "powershell -NoProfile -File scripts/network.ps1",
+    "network:configure": "powershell -NoProfile -File scripts/network.ps1 -Action Configure",
+    "apk:diagnose": "node scripts/diagnose-android.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
+    "esbuild": "^0.28.2"
+  },
+  "overrides": {
+    "xcode": {
+      "uuid": "11.1.1"
+    }
+  }
+}
