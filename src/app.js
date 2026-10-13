@@ -1,5 +1,6 @@
 import { SKILLS, MAX_LEVEL, getState, getStorageStatus, getLevel, canPlay, nextLevel, getStreak, getTodayPlays, getPracticedDays, getWeeklyDays, getSkillScore, finishLevel, updateName, updateSetting, completeOnboarding, resetProgress } from './state.js';
 import { startGame } from './games.js';
+import { renderTutorial } from './tutorials.js';
 
 const view = document.querySelector('#view');
 const toast = document.querySelector('#toast');
@@ -28,21 +29,26 @@ function notify(message) {
 }
 const listMap = () => { const settings = getState().settings; return settings.mapList || settings.largeText || settings.highContrast; };
 function syncPause() { cleanup?.setPaused(backgroundPaused || document.hidden || manualPaused || dialog.open); }
-function showDialog({ kind, title, description, confirmLabel, onConfirm, restoreFocus = false, returnAction }) {
+function showDialog({ kind, title, description, confirmLabel, onConfirm, restoreFocus = false, returnAction, level }) {
   if (dialog.open) return;
   dialogTask = { kind, onConfirm, restoreFocus, returnAction, opener: document.activeElement };
   dialog.returnValue = '';
   document.querySelector('#dialogTitle').textContent = title;
   document.querySelector('#dialogDescription').textContent = description;
+  const guide = document.querySelector('#dialogGuide');
+  guide.replaceChildren(); guide.hidden = kind !== 'help';
+  dialog.classList.toggle('tutorial-dialog', kind === 'help');
+  if (kind === 'help') renderTutorial(guide, level.gameId);
   document.querySelector('#dialogField').hidden = kind !== 'name';
   document.querySelector('#dialogError').textContent = '';
   document.querySelector('#dialogName').removeAttribute('aria-invalid');
   document.querySelector('#dialogName').value = kind === 'name' ? getState().name : '';
   document.querySelector('[data-dialog="confirm"]').textContent = confirmLabel;
   document.querySelector('[data-dialog="cancel"]').textContent = kind === 'exit' ? 'Continuar jogando' : 'Cancelar';
+  document.querySelector('[data-dialog="cancel"]').hidden = kind === 'help';
   dialog.showModal(); syncPause();
   if (kind === 'name') { document.querySelector('#dialogName').focus(); document.querySelector('#dialogName').select(); }
-  else document.querySelector('[data-dialog="cancel"]').focus();
+  else document.querySelector(`[data-dialog="${kind === 'help' ? 'confirm' : 'cancel'}"]`).focus();
 }
 document.querySelector('[data-dialog="cancel"]').addEventListener('click', () => dialog.close('cancel'));
 document.querySelector('#dialogForm').addEventListener('submit', event => {
@@ -89,11 +95,11 @@ function updateShell() {
   if (route.page === 'preferences') accessibilityButton.setAttribute('aria-current', 'page');
   else accessibilityButton.removeAttribute('aria-current');
   document.querySelectorAll('[data-nav]').forEach(button => {
-    const active = button.dataset.nav === route.page || (['intro', 'play', 'result'].includes(route.page) && button.dataset.nav === 'map');
+    const active = button.dataset.nav === route.page || (['play', 'result'].includes(route.page) && button.dataset.nav === 'map');
     button.classList.toggle('active', active);
     if (active) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
   });
-  document.body.classList.toggle('in-game', ['intro', 'play', 'result'].includes(route.page));
+  document.body.classList.toggle('in-game', ['play', 'result'].includes(route.page));
   document.body.classList.toggle('map-screen', route.page === 'map' && !listMap());
   document.body.classList.toggle('onboarding-screen', route.page === 'welcome');
 }
@@ -130,7 +136,7 @@ function renderHome() {
     <div class="hero-illustration" aria-hidden="true"><span class="hero-orbit"></span><span class="hero-main">🧠</span><span class="hero-bubble one">🌼</span><span class="hero-bubble two">🦋</span><span class="hero-bubble three">✦</span></div>
     <h1>Olá, ${escapeHtml(state.name)}! <span class="wave">👋</span></h1>
     <p>Vamos movimentar a mente hoje?</p>
-    <button type="button" class="primary-button hero-button" data-action="intro" data-id="${current.id}">Começar exercício <span aria-hidden="true">→</span></button>
+    <button type="button" class="primary-button hero-button" data-action="play" data-id="${current.id}">Começar exercício <span aria-hidden="true">→</span></button>
   </section>
   <section class="today-card"><div class="section-heading"><div><span class="eyebrow">UM POUQUINHO POR DIA</span><h2>Seu treino de hoje</h2></div><span class="day-icon" aria-hidden="true">☀️</span></div>
     <div class="today-progress"><span>${today} de 3 atividades</span><strong>${today === 3 ? 'Concluído!' : 'No seu ritmo'}</strong></div>
@@ -139,19 +145,20 @@ function renderHome() {
   </section>
   <section class="home-stats"><div><span>🔥</span><strong>${getStreak()}</strong><small>${getStreak() === 1 ? 'dia seguido' : 'dias seguidos'}</small></div><div><span>⭐</span><strong>${Object.values(state.stageRecords).reduce((sum, record) => sum + record.stars, 0)}</strong><small>estrelas</small></div><div><span>✦</span><strong>${state.xp}</strong><small>pontos XP</small></div></section>
   <div class="section-heading below"><div><span class="eyebrow">PRÓXIMA AVENTURA</span><h2>Continue sua jornada</h2></div><button type="button" class="text-link" data-action="map">Ver mapa →</button></div>
-  <button type="button" class="next-card ${current.color}" data-action="intro" data-id="${current.id}"><span class="next-icon">${current.icon}</span><span><small>ETAPA ${String(current.number).padStart(2, '0')} • ${current.skill.toUpperCase()}</small><strong>${current.name}</strong><em>${current.objective}</em></span><b aria-hidden="true">→</b></button>
+  <button type="button" class="next-card ${current.color}" data-action="play" data-id="${current.id}"><span class="next-icon">${current.icon}</span><span><small>ETAPA ${String(current.number).padStart(2, '0')} • ${current.skill.toUpperCase()}</small><strong>${current.name}</strong><em>${current.objective}</em></span><b aria-hidden="true">→</b></button>
   <p class="soft-note">Cada tentativa conta. Divirta-se no seu tempo! 💛</p>`;
 }
 function renderWelcome() {
   const settings = getState().settings;
-  view.innerHTML = `<section class="welcome-card"><span class="eyebrow">MENTE & MOVIMENTO</span><h1>Vamos deixar do seu jeito?</h1><p>Conte como prefere usar o site. É opcional, fica salvo apenas neste aparelho e você pode mudar tudo depois no Perfil.</p>
-    <form id="welcomeForm" class="welcome-form">
-      <label class="welcome-name" for="welcomeName"><strong>Como gostaria de ser chamado?</strong><small>Seu nome aparece nas boas-vindas e nas comemorações.</small><input id="welcomeName" name="name" type="text" maxlength="24" autocomplete="given-name" placeholder="Seu nome (opcional)" value="${getState().onboardingComplete ? escapeHtml(getState().name) : ''}"></label>
+  view.innerHTML = `<section class="welcome-card"><span class="eyebrow">MENTE & MOVIMENTO</span><h1>Vamos deixar do seu jeito?</h1><p>Digite seu nome ou apelido para começar. As outras preferências são opcionais. Tudo fica salvo apenas neste aparelho e pode ser alterado depois no Perfil.</p>
+    <form id="welcomeForm" class="welcome-form" novalidate>
+      <label class="welcome-name" for="welcomeName"><strong>Como gostaria de ser chamado? (obrigatório)</strong><small>Seu nome ou apelido aparece nas boas-vindas e nas comemorações.</small><input id="welcomeName" name="name" type="text" maxlength="24" autocomplete="given-name" required aria-describedby="welcomeNameError" placeholder="Seu nome ou apelido" value="${escapeHtml(getState().name)}"></label>
+      <p id="welcomeNameError" class="dialog-error" role="alert" hidden></p>
       <label class="hud-size-setting" for="welcomeHudSize"><span><strong>Tamanho geral do site</strong><small>Redimensiona textos, jogos, cartões e controles.</small></span><select id="welcomeHudSize" name="hudSize"><option value="compact" ${settings.hudSize === 'compact' ? 'selected' : ''}>Compacto</option><option value="normal" ${settings.hudSize === 'normal' ? 'selected' : ''}>Padrão</option><option value="large" ${settings.hudSize === 'large' ? 'selected' : ''}>Ampliado</option></select></label>
       <label class="welcome-check" for="welcomePace"><span><strong>Quero jogar no meu ritmo</strong><small>Sem pressa para observar as cartas e sequências.</small></span><input id="welcomePace" name="comfortablePace" type="checkbox" ${settings.comfortablePace ? 'checked' : ''}></label>
       <label class="welcome-check" for="welcomeText"><span><strong>Texto maior</strong><small>Facilita a leitura e mostra as fases em lista.</small></span><input id="welcomeText" name="largeText" type="checkbox" ${settings.largeText ? 'checked' : ''}></label>
       <label class="welcome-check" for="welcomeSound"><span><strong>Sons suaves</strong><small>Ativa respostas sonoras durante os jogos.</small></span><input id="welcomeSound" name="sound" type="checkbox" ${settings.sound ? 'checked' : ''}></label>
-      <div class="welcome-actions"><button type="submit" class="primary-button">Começar</button><button type="button" class="text-link" data-action="welcome-skip">Usar as opções padrão</button></div>
+      <div class="welcome-actions"><button type="submit" class="primary-button">Começar</button></div>
     </form></section>`;
 }
 function renderMap() {
@@ -168,7 +175,7 @@ function renderMap() {
     view.innerHTML = `${toolbar}${pageControls}<section class="level-list"><h1>Uma jornada que continua</h1><p>Os sete jogos voltam em novos ciclos. Cada ciclo exige um pouco mais de foco.</p><ol class="level-list-items">${stages.map(level => {
       const open = canPlay(level.number), record = state.stageRecords[level.number];
       const status = open ? record ? `${record.stars} de 3 estrelas. Jogar novamente.` : 'Disponível para jogar.' : `Conclua a fase ${level.number - 1} para liberar.`;
-      return `<li class="level-list-item"><button type="button" class="level-list-button" data-action="intro" data-id="${level.number}" aria-disabled="${!open}" aria-label="Fase ${level.number}, ciclo ${level.cycle}: ${level.name}. ${level.objective} ${status}"><span class="level-list-icon" aria-hidden="true">${level.icon}</span><span class="level-list-description"><small>FASE ${level.number} · CICLO ${level.cycle} · ${level.skill}</small><strong>${level.name}</strong><span>${level.objective}</span><span class="level-list-status">${status}</span></span></button></li>`;
+      return `<li class="level-list-item"><button type="button" class="level-list-button" data-action="play" data-id="${level.number}" aria-disabled="${!open}" aria-label="Fase ${level.number}, ciclo ${level.cycle}: ${level.name}. ${level.objective} ${status}"><span class="level-list-icon" aria-hidden="true">${level.icon}</span><span class="level-list-description"><small>FASE ${level.number} · CICLO ${level.cycle} · ${level.skill}</small><strong>${level.name}</strong><span>${level.objective}</span><span class="level-list-status">${status}</span></span></button></li>`;
     }).join('')}</ol></section>`;
     return;
   }
@@ -193,7 +200,7 @@ function renderMap() {
       const { x, y } = points[index], open = canPlay(level.number);
       const record = state.stageRecords[level.number], active = level.number === state.unlocked;
       return `<div class="map-stage ${level.color} ${open ? 'available' : 'locked'} ${record ? 'complete' : ''} ${active ? 'current' : ''}" style="--stage-x:${x / 360 * 100}%;--stage-y:${y}px">
-        <button type="button" class="map-node" data-action="intro" data-id="${level.number}" aria-disabled="${!open}" aria-label="Fase ${level.number}, ciclo ${level.cycle}: ${level.name}. ${open ? record ? `${record.stars} estrelas. Jogar novamente.` : 'Disponível para jogar.' : `Bloqueada. Conclua a fase ${level.number - 1}.`}">
+        <button type="button" class="map-node" data-action="play" data-id="${level.number}" aria-disabled="${!open}" aria-label="Fase ${level.number}, ciclo ${level.cycle}: ${level.name}. ${open ? record ? `${record.stars} estrelas. Jogar novamente.` : 'Disponível para jogar.' : `Bloqueada. Conclua a fase ${level.number - 1}.`}">
           <span class="map-node-number">${String(level.number).padStart(2, '0')}</span><span class="map-node-icon" aria-hidden="true">${open ? level.icon : '🔒'}</span>
         </button>
         <div class="map-stage-label"><strong>Fase ${level.number} · ${level.name}</strong><small>Ciclo ${level.cycle} · ${open ? level.skill : 'Bloqueada'}</small></div>
@@ -235,21 +242,12 @@ function renderPreferences() {
   ];
   view.innerHTML = `<button type="button" class="back-button" data-action="preferences-back">← Voltar</button><section class="panel settings"><span class="eyebrow">DO SEU JEITO</span><h1>Acessibilidade e preferências</h1><p>Escolha o que deixa a experiência mais confortável. Você pode mudar estas opções quando quiser.</p>${options.map(([key, title, description]) => `<label for="setting-${key}"><span><strong id="setting-title-${key}">${title}</strong><small id="setting-help-${key}">${description}</small></span><input id="setting-${key}" type="checkbox" data-setting="${key}" aria-labelledby="setting-title-${key}" aria-describedby="setting-help-${key}" ${settings[key] ? 'checked' : ''}></label>`).join('')}<p class="fine-print">Suas preferências ficam neste aparelho e são mantidas quando você apaga o progresso dos jogos.</p></section>`;
 }
-function renderIntro(id) {
-  const level = getLevel(id); if (!level || !canPlay(id)) return navigate('map');
-  const challenge = level.difficulty ? `Ciclo ${level.cycle}: mais elementos e sequências ou trilhas longas pedem foco extra.` : level.intro;
-  view.innerHTML = `<button type="button" class="back-button" data-action="map">← Voltar ao mapa</button>
-    <section class="intro-card ${level.color}"><span class="eyebrow">FASE ${String(level.number).padStart(2, '0')} · CICLO ${level.cycle} · ${level.skill.toUpperCase()}</span><div class="intro-icon" aria-hidden="true">${level.icon}</div>
-      <h1>${challenge}</h1><p>${level.name}</p>
-      <ol class="instruction-list">${level.steps.map((step, i) => `<li><span>${i + 1}</span>${step}</li>`).join('')}</ol>
-      <button type="button" class="primary-button" data-action="play" data-id="${id}">Entendi, vamos jogar →</button></section>`;
-}
 function renderPlay(id) {
   const level = getLevel(id); if (!level || !canPlay(id)) return navigate('map');
   view.innerHTML = `<div class="play-top"><button type="button" class="back-button" data-action="map">← Mapa</button><span>FASE ${level.number} · CICLO ${level.cycle}</span></div>
     <div class="play-heading"><div class="play-icon ${level.color}" aria-hidden="true">${level.icon}</div><div><span class="eyebrow">${level.skill.toUpperCase()}</span><h1>${level.name}</h1></div></div>
     <div class="instruction-banner"><span aria-hidden="true">👉</span><strong>${level.objective}</strong></div>
-    <p class="feedback" id="feedback" role="status" aria-live="polite" aria-atomic="true">Você consegue. Vá no seu ritmo!</p><div class="game-controls"><button type="button" class="secondary-button pause-button" data-action="pause" aria-pressed="false">Pausar partida</button></div><p id="pauseNotice" class="instruction-banner" role="status" hidden>Partida pausada. Selecione Retomar partida para continuar do mesmo ponto.</p><div id="gameMount"></div>`;
+    <p class="feedback" id="feedback" role="status" aria-live="polite" aria-atomic="true">Você consegue. Vá no seu ritmo!</p><div class="game-controls"><button type="button" class="secondary-button pause-button" data-action="pause" aria-pressed="false">Pausar partida</button><button type="button" class="secondary-button" data-action="help">Ver tutorial</button></div><p id="pauseNotice" class="instruction-banner" role="status" hidden>Partida pausada. Selecione Retomar partida para continuar do mesmo ponto.</p><div id="gameMount"></div>`;
   cleanup = startGame({
     id: level.gameId, mount: view.querySelector('#gameMount'), support: getState().levels[level.gameId].support, difficulty: level.difficulty, settings: { ...getState().settings },
     playSound: sound,
@@ -271,8 +269,8 @@ function renderResult(id, result) {
     <div class="reward-grid"><div><strong>+${result.xp}</strong><span>XP ganhos</span></div><div><strong>${result.score}%</strong><span>no jogo</span></div></div>
     <div class="trained"><span>${level.icon}</span><div><small>VOCÊ PRATICOU</small><strong>${level.skills.map(skill => SKILLS[skill].name).join(' e ')}</strong></div></div>
     ${result.unlocked ? `<p class="unlocked-note">🔓 Nova etapa liberada!</p>` : '<p class="unlocked-note">Você pode jogar novamente quando quiser.</p>'}
-    <div class="result-actions">${next && canPlay(next.id) ? `<button type="button" class="primary-button" data-action="intro" data-id="${next.id}">Próxima etapa →</button>` : ''}
-      <button type="button" class="secondary-button" data-action="map">Ver meu mapa</button><button type="button" class="text-link" data-action="intro" data-id="${id}">Jogar de novo</button></div></section>`;
+    <div class="result-actions">${next && canPlay(next.id) ? `<button type="button" class="primary-button" data-action="play" data-id="${next.id}">Próxima etapa →</button>` : ''}
+      <button type="button" class="secondary-button" data-action="map">Ver meu mapa</button><button type="button" class="text-link" data-action="play" data-id="${id}">Jogar de novo</button></div></section>`;
 }
 function render() {
   updateShell();
@@ -281,7 +279,6 @@ function render() {
   else if (route.page === 'map') renderMap();
   else if (route.page === 'profile') renderProfile();
   else if (route.page === 'preferences') renderPreferences();
-  else if (route.page === 'intro') renderIntro(route.id);
   else if (route.page === 'play') renderPlay(route.id);
   else if (route.page === 'result') renderResult(route.id, route.result);
   else renderHome();
@@ -291,11 +288,15 @@ function render() {
 document.addEventListener('click', event => {
   const button = event.target.closest('[data-action]'); if (!button || button.disabled) return;
   const { action, id } = button.dataset;
-  if (action === 'welcome-skip') { completeOnboarding({}); route = { page: 'home' }; render(); window.scrollTo(0, 0); focusHeading(); return; }
   if (action === 'welcome-edit') { route = { page: 'welcome' }; render(); window.scrollTo(0, 0); focusHeading(); return; }
   if (route.page === 'welcome') return;
-  if (['intro', 'play'].includes(action) && !canPlay(id)) { notify(`Conclua a etapa ${getLevel(id)?.number - 1} para liberar esta atividade.`); return; }
-  if (['home', 'map', 'profile', 'preferences', 'intro', 'play'].includes(action)) navigate(action, id);
+  if (action === 'help' && route.page === 'play') {
+    const level = getLevel(route.id);
+    showDialog({ kind: 'help', title: `Como jogar: ${level.name}`, description: 'A partida está pausada. Consulte as instruções ou experimente o exemplo.', confirmLabel: 'Voltar à partida', level, onConfirm: () => {}, restoreFocus: true, returnAction: 'help' });
+    return;
+  }
+  if (action === 'play' && !canPlay(id)) { notify(`Conclua a etapa ${getLevel(id)?.number - 1} para liberar esta atividade.`); return; }
+  if (['home', 'map', 'profile', 'preferences', 'play'].includes(action)) navigate(action, id);
   if (action === 'preferences-back') navigate(preferencesReturn.page, preferencesReturn.id);
   if (action === 'map-mode') {
     updateSetting('mapList', button.dataset.mode === 'list'); render();
@@ -321,15 +322,26 @@ document.addEventListener('submit', event => {
   if (event.target.id !== 'welcomeForm') return;
   event.preventDefault();
   const form = event.target;
-  completeOnboarding({
+  const completed = completeOnboarding({
     name: form.querySelector('[name="name"]').value,
     hudSize: form.querySelector('[name="hudSize"]').value,
     comfortablePace: form.querySelector('[name="comfortablePace"]').checked,
     largeText: form.querySelector('[name="largeText"]').checked,
     sound: form.querySelector('[name="sound"]').checked
   });
+  if (!completed) {
+    const input = form.querySelector('[name="name"]'), error = form.querySelector('#welcomeNameError');
+    error.textContent = 'Digite seu nome ou apelido para começar.';
+    error.hidden = false; input.setAttribute('aria-invalid', 'true'); input.focus();
+    return;
+  }
   route = { page: 'home' }; render(); window.scrollTo(0, 0); focusHeading();
   notify(getStorageStatus() === 'available' ? 'Preferências salvas. Aproveite sua jornada!' : 'Preferências aplicadas nesta sessão.');
+});
+document.addEventListener('input', event => {
+  if (event.target.id !== 'welcomeName') return;
+  event.target.removeAttribute('aria-invalid');
+  document.querySelector('#welcomeNameError').hidden = true;
 });
 document.addEventListener('change', event => { const key = event.target.dataset.setting; const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value; if (key && updateSetting(key, value)) { updateShell(); notify(getStorageStatus() === 'available' ? 'Preferência salva.' : 'Preferência alterada nesta sessão. Não foi possível salvar.'); } });
 render();

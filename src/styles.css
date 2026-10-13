@@ -417,9 +417,30 @@ html[data-hud-size="large"] body { width:90.9091%; min-width:290.91px; zoom:1.1;
 .focus-tile:hover { transform:translateY(-2px); }
 .focus-tile.found { border-color:#72ad80; background:#d9f1dc; }
 .count-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(42px,1fr)); gap:7px; max-width:620px; margin:18px auto; padding:16px; border:1px solid var(--line); border-radius:18px; background:#fbf9fd; }
-.count-grid span { display:grid; min-width:0; min-height:42px; place-items:center; border-radius:10px; background:#fff; font-size:1.65rem; }
+.count-grid .count-object { position:relative; display:grid; min-width:0; min-height:48px; padding:4px; place-items:center; border:2px solid transparent; border-radius:10px; background:#fff; font-size:1.65rem; }
+.count-object[aria-pressed="true"] { border-color:var(--purple); background:#eee6fa; }
+.count-object[aria-pressed="true"]::after { content:'✓'; position:absolute; top:0; right:2px; font-size:.8rem; font-weight:bold; color:#234b30; }
+.count-object.count-found:disabled { opacity:1; }
 .answer-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
 .answer-grid button { min-width:72px; font-size:1.25rem; }
+.game-hud { margin:0 auto 18px; max-width:760px; padding:16px 20px; border:1px solid var(--line); border-radius:18px; background:#fff; }
+.game-hud-labels { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 16px; margin-bottom:10px; color:var(--ink); }
+#gameStreak { color:var(--purple); font-weight:700; }
+.game-hud progress { display:block; width:100%; height:12px; overflow:hidden; appearance:none; border:0; border-radius:99px; background:#ece5f4; accent-color:#7655b9; }
+.game-hud progress::-webkit-progress-bar { background:#ece5f4; border-radius:99px; }
+.game-hud progress::-webkit-progress-value { background:linear-gradient(90deg,#7655b9,#409c88); border-radius:99px; }
+.game-hud progress::-moz-progress-bar { background:#7655b9; border-radius:99px; }
+.next-round { display:block; margin:20px auto 0; max-width:100%; }
+.count-grid .count-found, .answer-grid .answer-correct { background:#d9f1dc; outline:2px solid #357a48; outline-offset:-2px; color:#204d2c; }
+.focus-tile.found:disabled, .answer-grid .answer-correct:disabled { opacity:1; }
+.game-motion .game-area { animation:game-arrive .25s ease-out; }
+.game-motion .game-celebrate :is(.found,.matched,.filled,.answer-correct) { animation:game-pop .35s ease-out; }
+.game-paused *, .game-paused .game-area { animation-play-state:paused !important; }
+@keyframes game-arrive { from { opacity:.4; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes game-pop { 50% { scale:1.04; } }
+html.reduced-motion .game-area, html.reduced-motion .game-area * { animation:none !important; }
+html.high-contrast .game-hud { border:2px solid currentColor; background:#fff; }
+@media(prefers-reduced-motion:reduce) { .game-area, .game-area * { animation:none !important; } }
 @media(max-width:520px) {
   .welcome-card { width:calc(100% - 24px); padding:22px 16px; border-radius:20px; }
   .welcome-actions { align-items:stretch; flex-direction:column; }
@@ -427,5 +448,20 @@ html[data-hud-size="large"] body { width:90.9091%; min-width:290.91px; zoom:1.1;
   .focus-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
   .focus-tile { border-radius:11px; }
   .count-grid { grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px; padding:10px; }
-  .count-grid span { min-height:38px; font-size:1.4rem; }
+  .count-grid .count-object { min-height:48px; font-size:1.4rem; }
 }
+
+.tutorial-tip { padding:14px; border-left:4px solid var(--purple); background:#f5f0fb; color:var(--ink); line-height:1.6; }
+.tutorial-practice { margin-top:20px; padding:20px; border:1px solid var(--line); border-radius:18px; background:#fff; text-align:left; }
+.tutorial-practice h3 { font-size:1.15rem; }
+.tutorial-example { padding:12px; border-radius:12px; background:#fbf8f2; line-height:1.7; }
+.tutorial-prompt { font-weight:700; }
+.tutorial-choices { display:flex; flex-wrap:wrap; gap:10px; }
+.tutorial-choices button { max-width:100%; white-space:normal; }
+.tutorial-feedback { margin:14px 0; color:#225f4d; font-weight:700; min-height:1.5em; }
+.tutorial-practice small { display:block; color:var(--muted); line-height:1.5; }
+.tutorial-correct:disabled { opacity:1; background:#d9f1dc; color:#204d2c; }
+#appDialog.tutorial-dialog { width:min(720px,calc(100% - 24px)); max-height:calc(100dvh - 32px); overflow:auto; }
+.tutorial-dialog .instruction-list { margin-top:16px; }
+.tutorial-dialog .dialog-actions { position:sticky; bottom:0; padding-block:12px; background:#fff; }
+html.high-contrast .tutorial-tip, html.high-contrast .tutorial-practice { background:#fff; border:2px solid currentColor; }

@@ -10,10 +10,11 @@ const files = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/index.html', ['index.html', 'text/html; charset=utf-8']],
   ['/src/app.js', ['src/app.js', 'text/javascript; charset=utf-8']],
+  ['/src/app.bundle.js', ['src/app.bundle.js', 'text/javascript; charset=utf-8']],
   ['/src/games.js', ['src/games.js', 'text/javascript; charset=utf-8']],
+  ['/src/tutorials.js', ['src/tutorials.js', 'text/javascript; charset=utf-8']],
   ['/src/state.js', ['src/state.js', 'text/javascript; charset=utf-8']],
   ['/src/styles.css', ['src/styles.css', 'text/css; charset=utf-8']],
-  ['/assets/icon-512.png', ['assets/icon-512.png', 'image/png']],
   ['/assets/icon-512.png', ['assets/icon-512.png', 'image/png']]
 ]);
 
@@ -41,7 +42,6 @@ export function createWebServer(directory = root) {
     try {
       handle = await open(resolve(directory, file[0]), 'r');
       const { size } = await handle.stat();
-      response.setHeader('Cache-Control', pathname.endsWith('.html') ? 'no-cache' : 'public, max-age=3600');
       response.writeHead(200, { 'Content-Type': file[1], 'Content-Length': size });
       if (request.method === 'HEAD' || size === 0) response.end();
       else await pipeline(handle.createReadStream({ autoClose: false }), response);

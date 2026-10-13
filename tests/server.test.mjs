@@ -19,15 +19,18 @@ test('site: entrega a interface e recursos web e protege os arquivos internos', 
   await mkdir(join(directory, 'assets'));
   await writeFile(join(directory, 'index.html'), '<html lang="pt-BR">Mente & Movimento</html>');
   await writeFile(join(directory, 'src/app.js'), 'render();');
+  await writeFile(join(directory, 'src/app.bundle.js'), '(() => { render(); })();');
+  await writeFile(join(directory, 'src/tutorials.js'), 'export const tutorial = true;');
   await writeFile(join(directory, 'src/styles.css'), 'body { color: #333; }');
   await writeFile(join(directory, 'assets/icon-512.png'), Buffer.from([1, 2, 3]));
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   const origin = `http://127.0.0.1:${server.address().port}`;
-  for (const [path, type] of [['/', 'text/html'], ['/src/app.js', 'text/javascript'], ['/src/styles.css', 'text/css'], ['/assets/icon-512.png', 'image/png']]) {
+  for (const [path, type] of [['/', 'text/html'], ['/src/app.js', 'text/javascript'], ['/src/app.bundle.js', 'text/javascript'], ['/src/tutorials.js', 'text/javascript'], ['/src/styles.css', 'text/css'], ['/assets/icon-512.png', 'image/png']]) {
     const response = await fetch(origin + path);
     assert.equal(response.status, 200, path);
     assert.match(response.headers.get('content-type'), new RegExp(type));
     assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+    assert.equal(response.headers.get('cache-control'), 'no-store');
     assert.ok(Number(response.headers.get('content-length')) > 0);
   }
   for (const path of ['/package.json', '/.git/config', '/private/config', '/downloads/old-file.bin', '/%2e%2e/package.json']) {

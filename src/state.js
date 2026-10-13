@@ -4,8 +4,8 @@ export const LEVELS = [
   { id: 'path', number: 3, name: 'Trilha da Borboleta', short: 'Siga uma linha', icon: '🦋', skill: 'Coordenação', skills: ['coordination', 'visual'], color: 'blue', intro: 'Hoje vamos treinar a precisão!', steps: ['Comece na flor.', 'Siga o caminho com o dedo ou escolha avançar com toques.', 'Chegue até a borboleta.'], objective: 'Siga a trilha do início ao fim.' },
   { id: 'sequence', number: 4, name: 'Cores em Festa', short: 'Memorize a sequência', icon: '🎨', skill: 'Memória', skills: ['memory', 'reasoning'], color: 'purple', intro: 'Hoje vamos treinar sua atenção!', steps: ['Leia ou observe a sequência de cores e formas.', 'Depois, repita desde o primeiro símbolo.', 'Selecione os botões na mesma ordem.'], objective: 'Repita a sequência de cores e formas.' },
   { id: 'differences', number: 5, name: 'Dois Jardins', short: 'Encontre diferenças', icon: '👀', skill: 'Atenção', skills: ['attention', 'visual'], color: 'green', intro: 'Hoje vamos observar os detalhes!', steps: ['Veja os dois jardins.', 'Procure o que mudou.', 'Toque no detalhe diferente.'], objective: 'Encontre as diferenças entre os jardins.' },
-  { id: 'oddone', number: 6, name: 'Intruso no Jardim', short: 'Encontre o diferente', icon: '🔎', skill: 'Atenção', skills: ['attention', 'visual'], color: 'coral', intro: 'Hoje vamos procurar um detalhe que não combina!', steps: ['Observe todos os símbolos.', 'Compare um por um.', 'Toque no único símbolo diferente.'], objective: 'Encontre o único símbolo diferente.' },
-  { id: 'counting', number: 7, name: 'Contagem da Colheita', short: 'Conte os objetos', icon: '🧺', skill: 'Raciocínio', skills: ['reasoning', 'attention'], color: 'yellow', intro: 'Hoje vamos contar com atenção!', steps: ['Observe os objetos espalhados.', 'Conte apenas o símbolo indicado.', 'Escolha a quantidade correta.'], objective: 'Conte quantas vezes aparece o símbolo indicado.' }
+  { id: 'oddone', number: 6, name: 'Intruso no Jardim', short: 'Encontre o diferente', icon: '🔎', skill: 'Atenção', skills: ['attention', 'visual'], color: 'coral', intro: 'Hoje vamos procurar um detalhe que não combina!', steps: ['Observe todos os símbolos.', 'Compare um por um.', 'Toque no diferente em cada uma das três rodadas.'], objective: 'Encontre o símbolo diferente nas três rodadas.' },
+  { id: 'counting', number: 7, name: 'Contagem da Colheita', short: 'Conte os objetos', icon: '🧺', skill: 'Raciocínio', skills: ['reasoning', 'attention'], color: 'yellow', intro: 'Hoje vamos contar com atenção!', steps: ['Observe os objetos espalhados.', 'Conte apenas o símbolo indicado.', 'Escolha a quantidade correta nas três rodadas.'], objective: 'Conte os objetos pedidos nas três rodadas.' }
 ];
 export const SKILLS = {
   memory: { name: 'Memória', icon: '🧠', color: '#a77ce1' },
@@ -15,6 +15,7 @@ export const SKILLS = {
   visual: { name: 'Percepção visual', icon: '🌈', color: '#75a9df' }
 };
 const KEY = 'mente-movimento-v1';
+const cleanName = value => typeof value === 'string' ? value.replace(/[<>]/g, '').trim().slice(0, 24).trim() : '';
 export const MAX_LEVEL = 999_999_999;
 let storage = null, storageStatus = 'available';
 try { storage = globalThis.localStorage; if (!storage) storageStatus = 'unavailable'; }
@@ -22,7 +23,7 @@ catch { storageStatus = 'unavailable'; }
 export const getStorageStatus = () => storageStatus;
 const day = offset => { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const blank = () => ({
-  name: 'Maria', onboardingComplete: false, xp: 0, minutes: 0, plays: 0, streak: 0, lastDay: '', unlocked: 1, stageRecords: {},
+  name: '', onboardingComplete: false, xp: 0, minutes: 0, plays: 0, streak: 0, lastDay: '', unlocked: 1, stageRecords: {},
   settings: { largeText: false, sound: true, highContrast: false, reducedMotion: false, comfortablePace: true, mapList: false, hudSize: 'normal' },
   levels: Object.fromEntries(LEVELS.map(level => [level.id, { stars: 0, bestScore: 0, plays: 0, support: 0 }])),
   history: [], skills: Object.fromEntries(Object.keys(SKILLS).map(id => [id, { total: 0, count: 0 }]))
@@ -33,8 +34,8 @@ function load() {
   try {
     const saved = JSON.parse(storage?.getItem(KEY) || 'null');
     if (!saved || typeof saved !== 'object') return fresh;
-    fresh.onboardingComplete = saved.onboardingComplete !== false;
-    fresh.name = typeof saved.name === 'string' && saved.name.trim() ? saved.name.trim().slice(0, 24) : fresh.name;
+    fresh.name = cleanName(saved.name);
+    fresh.onboardingComplete = Boolean(fresh.name) && saved.onboardingComplete !== false;
     for (const key of ['xp', 'minutes', 'plays', 'streak']) fresh[key] = bounded(saved[key], 0, MAX_LEVEL * 100);
     fresh.lastDay = /^\d{4}-\d{2}-\d{2}$/.test(saved.lastDay || '') ? saved.lastDay : '';
     fresh.unlocked = Math.max(1, Math.min(MAX_LEVEL, bounded(saved.unlocked, 1, MAX_LEVEL)));
@@ -87,8 +88,7 @@ const save = () => {
 export const getState = () => state;
 export function getLevel(id) {
   const template = LEVELS.find(level => level.id === id);
-  if (template) return template;
-  const number = Number(id);
+  const number = template ? template.number : Number(id);
   if (!Number.isSafeInteger(number) || number < 1 || number > MAX_LEVEL) return undefined;
   const base = LEVELS[(number - 1) % LEVELS.length];
   const cycle = Math.floor((number - 1) / LEVELS.length) + 1;
@@ -124,16 +124,18 @@ export function finishLevel(id, { mistakes = 0, elapsedSeconds = 0 } = {}) {
   save();
   return { stars, score, xp, first, unlocked: level.number >= previousUnlocked && level.number < MAX_LEVEL ? level.number + 1 : null };
 }
-export function updateName(value) { const name = String(value || '').trim().replace(/[<>]/g, '').slice(0, 24); if (!name) return false; state.name = name; save(); return true; }
-export function completeOnboarding({ name, hudSize, comfortablePace, sound, largeText }) {
-  const cleanName = String(name || '').trim().replace(/[<>]/g, '').slice(0, 24);
-  if (cleanName) state.name = cleanName;
+export function updateName(value) { const name = cleanName(value); if (!name) return false; state.name = name; save(); return true; }
+export function completeOnboarding({ name, hudSize, comfortablePace, sound, largeText } = {}) {
+  const normalizedName = cleanName(name);
+  if (!normalizedName) return false;
+  state.name = normalizedName;
   if (['compact', 'normal', 'large'].includes(hudSize)) state.settings.hudSize = hudSize;
   for (const [key, value] of Object.entries({ comfortablePace, sound, largeText })) {
     if (typeof value === 'boolean') state.settings[key] = value;
   }
   state.onboardingComplete = true;
   save();
+  return true;
 }
 export function updateSetting(key, value) {
   if (!Object.prototype.hasOwnProperty.call(state.settings, key)) return false;

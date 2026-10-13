@@ -5,10 +5,50 @@ const storage = new Map();
 globalThis.localStorage = { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) };
 const state = await import('../src/state.js');
 
+test('nome obrigatório rejeita entradas vazias sem concluir ou alterar preferências', async () => {
+  const fresh = await import('../src/state.js?required-name');
+  assert.equal(fresh.getState().name, '');
+  for (const name of [undefined, null, '', '   ', '< >']) {
+    assert.equal(fresh.completeOnboarding({ name, sound: false }), false);
+    assert.equal(fresh.getState().onboardingComplete, false);
+    assert.equal(fresh.getState().settings.sound, true);
+  }
+  assert.equal(fresh.completeOnboarding({ name: '  João  ', sound: false }), true);
+  assert.equal(fresh.getState().name, 'João');
+  assert.equal(fresh.updateName('< >'), false);
+  const loaded = await import('../src/state.js?required-name-reload');
+  assert.equal(loaded.getState().name, 'João');
+  assert.equal(loaded.getState().onboardingComplete, true);
+});
+
+test('progresso antigo sem nome volta às boas-vindas sem perder etapas ou XP', async () => {
+  const working = globalThis.localStorage;
+  globalThis.localStorage = { getItem: () => JSON.stringify({ name: '   ', onboardingComplete: true, xp: 500, unlocked: 8 }), setItem() {} };
+  try {
+    const loaded = await import('../src/state.js?missing-name');
+    assert.equal(loaded.getState().onboardingComplete, false);
+    assert.equal(loaded.getState().xp, 500);
+    assert.equal(loaded.getState().unlocked, 8);
+  } finally { globalThis.localStorage = working; }
+});
+
+test('sete jogos liberam o próximo ciclo e identificadores antigos mantêm o jogo correto', () => {
+  state.resetProgress();
+  for (let number = 1; number <= 14; number++) {
+    const level = state.getLevel(number);
+    assert.equal(level.cycle, number <= 7 ? 1 : 2);
+    assert.equal(level.difficulty, number <= 7 ? 0 : 1);
+    assert.equal(level.gameId, state.LEVELS[(number - 1) % 7].id);
+    assert.equal(state.canPlay(number + 1), false);
+    assert.equal(state.finishLevel(number).unlocked, number + 1);
+  }
+  for (const level of state.LEVELS) assert.deepEqual(state.getLevel(level.id), state.getLevel(level.number));
+});
+
 test('mapa libera um jogo diferente por etapa e guarda a melhor pontuação', () => {
   state.resetProgress();
-  assert.equal(state.LEVELS.length, 5);
-  assert.equal(new Set(state.LEVELS.map(level => level.id)).size, 5);
+  assert.equal(state.LEVELS.length, 7);
+  assert.equal(new Set(state.LEVELS.map(level => level.id)).size, 7);
   assert.equal(state.canPlay('pairs'), false);
   assert.equal(state.finishLevel('pairs'), null);
   const first = state.finishLevel('sort', { mistakes: 3, elapsedSeconds: 70 });
@@ -43,7 +83,7 @@ test('dificuldade muda aos poucos e preferências sobrevivem ao recarregamento',
   assert.equal(loaded.getState().name, 'Ana');
   assert.deepEqual(loaded.getState().settings, {
     largeText: true, sound: false, highContrast: true, reducedMotion: true,
-    comfortablePace: false, mapList: true
+    comfortablePace: false, mapList: true, hudSize: 'normal'
   });
   assert.equal(loaded.getState().levels.sort.support, 2);
   assert.ok(loaded.getSkillScore('coordination') > 0);
@@ -60,7 +100,7 @@ test('preferências acessíveis têm defaults seguros ao migrar progresso antigo
     assert.equal(migrated.getState().unlocked, 2);
     assert.deepEqual(migrated.getState().settings, {
       largeText: true, sound: false, highContrast: false, reducedMotion: false,
-      comfortablePace: true, mapList: false
+      comfortablePace: true, mapList: false, hudSize: 'normal'
     });
   } finally { globalThis.localStorage = working; }
 });

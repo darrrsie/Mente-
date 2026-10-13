@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs';
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 
@@ -18,8 +19,11 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
   const profile = await mkdtemp(join(tmpdir(), 'mente-browser-test-'));
   const files = new Map([
     ['/', ['index.html', 'text/html']], ['/src/app.js', ['src/app.js', 'text/javascript']],
+    ['/src/app.bundle.js', ['src/app.bundle.js', 'text/javascript']],
+    ['/src/state.js', ['src/state.js', 'text/javascript']], ['/src/games.js', ['src/games.js', 'text/javascript']],
     ['/src/styles.css', ['src/styles.css', 'text/css']], ['/assets/icon-512.png', ['assets/icon-512.png', 'image/png']],
-    ['/test-games.js', ['src/games.js', 'text/javascript']]
+    ['/test-games.js', ['src/games.js', 'text/javascript']],
+    ['/test-tutorials.js', ['src/tutorials.js', 'text/javascript']]
   ]);
   const requests = [];
   const server = createServer(async (req, res) => {
@@ -74,14 +78,30 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
   };
   await cdp('Runtime.enable');
   await cdp('Page.enable');
+  await cdp('Page.bringToFront');
   await cdp('Emulation.setDeviceMetricsOverride', { width: 360, height: 800, deviceScaleFactor: 1, mobile: true });
   const navigation = await cdp('Page.navigate', { url: `http://127.0.0.1:${server.address().port}/` });
   assert.equal(navigation.errorText, undefined, JSON.stringify({ navigation, requests }));
   for (let i = 0; i < 150; i++) {
-    if (await evaluate('!!document.querySelector(".hero")')) break;
+    if (await evaluate('!!document.querySelector("#welcomeForm")')) break;
     await delay(100);
   }
-  assert.equal(await evaluate('!!document.querySelector(".hero")'), true, JSON.stringify({ errors, requests, navigation, page: await evaluate('({url:location.href,html:document.documentElement.outerHTML.slice(0,1000)})') }));
+  assert.equal(await evaluate('!!document.querySelector("#welcomeForm")'), true, JSON.stringify({ errors, requests, navigation, page: await evaluate('({url:location.href,html:document.documentElement.outerHTML.slice(0,1000)})') }));
+  await t.test('nome é obrigatório e não pode ser ignorado pela navegação', async () => {
+    assert.equal(await evaluate('document.querySelector("#welcomeName").required'), true);
+    assert.equal(await evaluate('document.querySelector("[data-action=welcome-skip]")'), null);
+    for (const name of ['', '   ', '< >']) {
+      await evaluate(`document.querySelector('#welcomeName').value = ${JSON.stringify(name)}; document.querySelector('#welcomeForm button[type=submit]').click()`);
+      assert.equal(await evaluate('!!document.querySelector("#welcomeForm")'), true);
+      assert.equal(await evaluate('document.activeElement.id'), 'welcomeName');
+      assert.equal(await evaluate('document.querySelector("#welcomeName").getAttribute("aria-invalid")'), 'true');
+      assert.equal(await evaluate('document.querySelector("#welcomeNameError").hidden'), false);
+      await evaluate('document.querySelector("[data-nav=map]").click()');
+      assert.equal(await evaluate('!!document.querySelector("#welcomeForm")'), true);
+    }
+  });
+  await evaluate('document.querySelector("#welcomeName").value = "Maria"; document.querySelector("#welcomeForm").requestSubmit()');
+  assert.equal(await evaluate('!!document.querySelector(".hero")'), true);
   assert.equal(await evaluate('document.documentElement.scrollWidth <= 360'), true);
   assert.equal(await evaluate('document.querySelector("#storageNotice").hidden'), true);
   await evaluate('document.querySelector("[data-nav=map]").click()');
@@ -97,7 +117,7 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
   assert.equal(await evaluate('document.documentElement.classList.contains("high-contrast")'), true);
   assert.equal(await evaluate('document.documentElement.classList.contains("reduced-motion")'), true);
   assert.deepEqual(await evaluate('JSON.parse(localStorage.getItem("mente-movimento-v1")).settings'), {
-    largeText: true, sound: true, highContrast: true, reducedMotion: true, comfortablePace: true, mapList: true
+    largeText: true, sound: true, highContrast: true, reducedMotion: true, comfortablePace: true, mapList: true, hudSize: 'normal'
   });
 
   await t.test('diálogos aceitam Escape, preservam dados e devolvem foco', async () => {
@@ -152,16 +172,18 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
             assert.equal(await evaluate('document.activeElement === document.querySelector("#view h1")'), true, `${page}: título recebe foco.`);
           }
           assert.equal(await evaluate('!!document.querySelector(".level-list")'), true, 'Mapa acessível oferece lista em ordem de etapas.');
-          assert.deepEqual(await evaluate('[...document.querySelectorAll("#view [data-action=intro]")].map(button => button.dataset.id)'), ['sort', 'pairs', 'path', 'sequence', 'differences']);
-          await evaluate('document.querySelector("#view [data-action=intro][data-id=sort]").click()');
-          await expectReflow(width, `intro, ${width}px, fonte ${fontSize || 'normal'}`);
+          assert.deepEqual(await evaluate('[...document.querySelectorAll("#view [data-action=play]")].map(button => Number(button.dataset.id))'), Array.from({ length: 15 }, (_, index) => index + 1));
+          await evaluate('document.querySelector("#view [data-action=play][data-id]").click()');
+          await expectReflow(width, `jogo, ${width}px, fonte ${fontSize || 'normal'}`);
+          await evaluate('document.querySelector("[data-nav=map]").click()');
+          await closeDialog('document.querySelector("[data-dialog=confirm]").click()');
         }
       }
     } finally { await evaluate('document.documentElement.style.fontSize = ""'); }
   });
 
   await t.test('sair pausa a partida e concluir anuncia a próxima tela', async () => {
-    await evaluate('document.querySelector("[data-nav=map]").click(); document.querySelector("#view [data-action=intro][data-id=sort]").click(); document.querySelector("[data-action=play]").click(); document.querySelector(".fruit-tile").click(); document.querySelector("[data-nav=map]").focus(); document.activeElement.click()');
+    await evaluate('document.querySelector("[data-nav=map]").click(); document.querySelector("#view [data-action=play][data-id]").click(); document.querySelector(".fruit-tile").click(); document.querySelector("[data-nav=map]").focus(); document.activeElement.click()');
     assert.equal(await evaluate('document.querySelector("#appDialog").open'), true);
     const gameBefore = await evaluate('document.querySelector("#gameMount").innerHTML');
     await evaluate('document.querySelectorAll(".fruit-tile")[1].click()');
@@ -178,7 +200,31 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
     assert.equal(await evaluate('!!document.querySelector(".result-card")'), true);
     assert.equal(await evaluate('document.activeElement === document.querySelector("#view h1")'), true, 'Leitor de tela recebe foco no resultado da partida.');
     assert.equal(await evaluate('JSON.parse(localStorage.getItem("mente-movimento-v1")).plays'), 1);
-    await evaluate('document.querySelector("[data-action=intro][data-id=sort]").click(); document.querySelector("[data-action=play]").click(); document.querySelector("[data-nav=map]").click()');
+    await evaluate('document.querySelector(".result-actions .text-link").click()');
+    assert.equal(await evaluate('!!document.querySelector("#gameMount") && !document.querySelector(".intro-card")'), true, 'Jogar de novo abre a partida diretamente.');
+    await evaluate('document.querySelector(".fruit-tile").click(); document.querySelector("[data-action=help]").focus(); document.activeElement.click()');
+    assert.equal(await evaluate('document.querySelector("#appDialog").open'), true);
+    await cdp('Emulation.setDeviceMetricsOverride', { width: 320, height: 800, deviceScaleFactor: 1, mobile: true });
+    await evaluate('document.documentElement.style.fontSize = "40px"');
+    await expectReflow(320, 'ajuda aberta com texto ampliado');
+    assert.equal(await evaluate('document.querySelector("#appDialog").scrollWidth <= document.querySelector("#appDialog").clientWidth + 1'), true);
+    await evaluate('document.documentElement.style.fontSize = ""');
+    await cdp('Emulation.setDeviceMetricsOverride', { width: 360, height: 800, deviceScaleFactor: 1, mobile: true });
+    const beforeHelp = await evaluate('document.querySelector("#gameMount").innerHTML');
+    const savedBeforeHelp = await evaluate('localStorage.getItem("mente-movimento-v1")');
+    await evaluate('document.querySelectorAll(".fruit-tile")[1].click(); document.querySelectorAll(".tutorial-choices button")[0].click(); document.querySelectorAll(".tutorial-choices button")[1].click()');
+    assert.equal(await evaluate('document.querySelector("#gameMount").innerHTML'), beforeHelp, 'Ajuda mantém a partida pausada.');
+    assert.equal(await evaluate('localStorage.getItem("mente-movimento-v1")'), savedBeforeHelp, 'Exemplo não altera progresso.');
+    assert.match(await evaluate('document.querySelector(".tutorial-feedback").textContent'), /Muito bem/);
+    await closeDialog('document.querySelector("[data-dialog=confirm]").click()');
+    assert.equal(await evaluate('document.activeElement.dataset.action'), 'help');
+    assert.equal(await evaluate('document.querySelector("#gameMount").innerHTML'), beforeHelp);
+    await evaluate('document.querySelector("[data-nav=map]").click()');
+    await closeDialog('document.querySelector("[data-dialog=confirm]").click()');
+    await evaluate('document.querySelectorAll("#view [data-action=play]")[1].click()');
+    assert.equal(await evaluate('!!document.querySelector("#pairsGrid") && !document.querySelector(".intro-card")'), true, 'Outro jogo também abre diretamente.');
+    assert.equal(await evaluate('document.querySelector("[data-action=help]").textContent'), 'Ver tutorial');
+    await evaluate('document.querySelector("[data-nav=map]").click()');
     await closeDialog('document.querySelector("[data-dialog=confirm]").click()');
     assert.equal(await evaluate('document.querySelector("#appDialog").open'), false);
     assert.equal(await evaluate('!!document.querySelector(".level-list")'), true);
@@ -190,8 +236,36 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
     for (let i = 0; i < 50 && !await evaluate('!!document.querySelector(".hero")'); i++) await delay(100);
     assert.equal(await evaluate('!!document.querySelector(".hero")'), true);
     assert.equal(await evaluate('["large-text", "high-contrast", "reduced-motion"].every(name => document.documentElement.classList.contains(name))'), true);
+    await evaluate('document.querySelector("[data-nav=map]").click(); document.querySelectorAll("#view [data-action=play]")[1].click()');
+    assert.equal(await evaluate('!!document.querySelector("#pairsGrid") && !document.querySelector(".intro-card")'), true, 'Um jogo abre direto após recarregar.');
+    await evaluate('document.querySelector("[data-action=pause]").click(); document.querySelector("[data-action=help]").click()');
+    await closeDialog('document.querySelector("#appDialog").close("cancel")');
+    assert.equal(await evaluate('document.querySelector("#gameMount").hidden'), true, 'Fechar ajuda preserva a pausa manual.');
+    await evaluate('document.querySelector("[data-nav=map]").click()');
+    await closeDialog('document.querySelector("[data-dialog=confirm]").click()');
     await evaluate('document.querySelector("[data-action=preferences]").click()');
     assert.equal(await evaluate('["largeText", "highContrast", "reducedMotion", "comfortablePace", "mapList"].every(key => document.querySelector(`[data-setting="${key}"]`).checked)'), true);
+  });
+
+  await t.test('sete tutoriais permitem experimentar sem pontuar e funcionam com texto ampliado', async () => {
+    const unchanged = await evaluate('localStorage.getItem("mente-movimento-v1")');
+    for (const [id, answers] of Object.entries({ sort: [0, 1], pairs: [1], path: [0, 0], sequence: [0, 1], differences: [1], oddone: [1], counting: [1] })) {
+      await evaluate(`(async () => {
+        const { renderTutorial } = await import('/test-tutorials.js');
+        let mount = document.querySelector('#tutorialTest');
+        if (!mount) { mount = document.createElement('div'); mount.id = 'tutorialTest'; document.querySelector('#view').appendChild(mount); }
+        renderTutorial(mount, ${JSON.stringify(id)});
+      })()`);
+      await expectReflow(360, id + ': tutorial cabe na tela');
+      if (id !== 'path') {
+        await evaluate(`document.querySelectorAll('#tutorialTest .tutorial-choices button')[${answers[0] === 0 ? 1 : 0}].click()`);
+        assert.match(await evaluate('document.querySelector("#tutorialTest .tutorial-feedback").textContent'), /Tente novamente/);
+      }
+      for (const answer of answers) await evaluate(`document.querySelectorAll('#tutorialTest .tutorial-choices button')[${answer}].click()`);
+      assert.match(await evaluate('document.querySelector("#tutorialTest .tutorial-feedback").textContent'), /Muito bem/);
+    }
+    assert.equal(await evaluate('localStorage.getItem("mente-movimento-v1")'), unchanged);
+    await evaluate('document.querySelector("#tutorialTest").remove()');
   });
 
   const result = await evaluate(`(async () => {
@@ -235,17 +309,28 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
       mount.querySelectorAll('.sequence-pad')[1].click(); mount.querySelector('#repeatSequence').click(); tick(600);
       if (outcomes.sequence.elapsedSeconds > 7) throw Error('Tempo pausado foi contado');
       start('differences'); const items = mount.querySelectorAll('#sceneB button');
-      [3, 4, 5].forEach(i => items[i].click()); items[0].click(); tick(700);
+      items.forEach((button, i) => { if (button.querySelector('.scene-name').textContent !== mount.querySelectorAll('#sceneA .scene-name')[i].textContent) button.click(); }); tick(700);
+      start('oddone');
+      for (let round = 0; round < 3; round++) {
+        const tiles = [...mount.querySelectorAll('.focus-tile')];
+        tiles.find(tile => tiles.filter(other => other.textContent === tile.textContent).length === 1).click(); tick(1100);
+      }
+      start('counting');
+      for (let round = 0; round < 3; round++) {
+        const targetName = mount.querySelector('#countTip strong').textContent.split(' ').slice(1).join(' ');
+        const quantity = [...mount.querySelectorAll('.count-grid .count-object')].filter(item => item.getAttribute('aria-label').endsWith(': ' + targetName)).length;
+        [...mount.querySelectorAll('[data-answer]')].find(button => Number(button.dataset.answer) === quantity).click(); tick(1100);
+      }
       return outcomes;
     } finally {
       cleanup?.(); mount.remove(); window.setTimeout = original.timeout; window.clearTimeout = original.clear;
       Math.random = original.random; performance.now = original.now;
     }
   })()`);
-  assert.deepEqual(Object.keys(result), ['sort', 'pairs', 'path', 'sequence', 'differences']);
+  assert.deepEqual(Object.keys(result), ['sort', 'pairs', 'path', 'sequence', 'differences', 'oddone', 'counting']);
   for (const [id, outcome] of Object.entries(result)) assert.equal(outcome.mistakes, 0, id);
 
-  await t.test('leitores de tela recebem figuras reveladas e posições dos jardins', async () => {
+  await t.test('leitores de tela recebem figuras reveladas e posições dos jardins', async accessibilityTest => {
     await evaluate(`(async () => {
       const { startGame } = await import('/test-games.js');
       const mount = document.createElement('div'); mount.id = 'accessibilityTestMount'; document.querySelector('#view').appendChild(mount);
@@ -255,9 +340,9 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
       window.clearTimeout = id => timers.delete(id); Math.random = () => .1; performance.now = () => now;
       window.__gameTest = {
         mount, outcomes,
-        start(id, settings = { comfortablePace: true }) {
+        start(id, settings = { comfortablePace: true }, options = {}) {
           cleanup?.(); mount.innerHTML = ''; outcomes.length = 0;
-          cleanup = startGame({ id, mount, settings, onComplete: result => outcomes.push(result) });
+          cleanup = startGame({ id, mount, settings, ...options, onComplete: result => outcomes.push(result) });
         },
         tick(ms) {
           const end = now + ms;
@@ -282,13 +367,13 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
     try {
       const preview = await cardNames();
       assert.equal(preview.length, 6);
-      assert.equal(preview.every(name => /Margarida|Borboleta|Morango/.test(name)), true, 'Cartas reveladas expõem o nome da figura, sem depender de emoji.');
+      assert.equal(preview.every(name => /^Carta \d+, .+, revelada$/.test(name)), true, 'Cartas reveladas expõem o nome da figura, sem depender de emoji.');
       await evaluate('window.__gameTest.tick(100000)');
       assert.deepEqual(await cardNames(), preview, 'Ritmo confortável aguarda a pessoa observar as figuras.');
       await evaluate('document.querySelector("#pairStart").click()');
       const hidden = await cardNames();
       assert.equal(hidden.length, 6);
-      assert.equal(hidden.every(name => /fechada/.test(name) && !/Margarida|Borboleta|Morango/.test(name)), true, 'Cartas fechadas não revelam os pares pela árvore de acessibilidade.');
+      assert.equal(hidden.every(name => /^Carta \d+, fechada\./.test(name)), true, 'Cartas fechadas não revelam os pares pela árvore de acessibilidade.');
       await evaluate(`(() => {
         const game = window.__gameTest, cards = [...game.mount.querySelectorAll('.pair-card')];
         game.pause(true); cards[0].click(); game.tick(10000);
@@ -296,7 +381,7 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
       assert.deepEqual(await cardNames(), hidden, 'Pausa bloqueia ações nas cartas.');
       await evaluate('window.__gameTest.pause(false); document.querySelector(".pair-card").click()');
       const first = await cardNames();
-      assert.match(first[0], /Margarida|Borboleta|Morango/);
+      assert.equal(first[0], preview[0]);
       await evaluate(`(() => {
         const cards = [...window.__gameTest.mount.querySelectorAll('.pair-card')];
         const firstName = cards[0].getAttribute('aria-label').split(',')[1];
@@ -314,10 +399,12 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
       assert.equal(choices.length, 9, 'Jardim interativo descreve os nove objetos.');
       for (const node of [...reference, ...choices]) assert.match(node.name.value, /linha [123], coluna [123]: [^\s.]+/);
       assert.match(reference[0].name.value, /Sol/);
-      assert.match(choices[0].name.value, /Sol/);
-      await evaluate('document.querySelectorAll("#sceneB button")[3].click()');
+      await evaluate(`(() => {
+        const left = [...document.querySelectorAll('#sceneA .scene-name')];
+        [...document.querySelectorAll('#sceneB button')].find((button, i) => button.querySelector('.scene-name').textContent !== left[i].textContent).click();
+      })()`);
       const foundTree = await cdp('Accessibility.getFullAXTree');
-      assert.ok(foundTree.nodes.some(node => node.role?.value === 'button' && /Jardim B, linha 2, coluna 1:.*Diferença encontrada/.test(node.name?.value || '')));
+      assert.ok(foundTree.nodes.some(node => node.role?.value === 'button' && /Jardim B, linha \d, coluna \d:.*Diferença encontrada/.test(node.name?.value || '')));
 
       await evaluate('window.__gameTest.start("sequence")');
       assert.equal(await evaluate('document.querySelectorAll("#sequencePreview li").length'), 4);
@@ -333,18 +420,154 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
 
       await evaluate('window.__gameTest.start("path"); document.querySelector("#pathAssist").focus()');
       for (let i = 0; i < 15; i++) {
-        await cdp('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
+        await cdp('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, text: '\r' });
         await cdp('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
       }
       await evaluate('window.__gameTest.tick(600)');
-      assert.equal(await evaluate('window.__gameTest.outcomes.length'), 1, 'Alternativa de teclado conclui a trilha sem arrastar.');
+      assert.equal(await evaluate('window.__gameTest.outcomes.length'), 1, await evaluate('JSON.stringify({ counter: document.querySelector("#counter").textContent, focus: document.activeElement.outerHTML })'));
       assert.equal(await evaluate('window.__gameTest.outcomes[0].mistakes'), 0);
+
+      await accessibilityTest.test('sete jogos aceitam pausa, erros e conclusão nas dificuldades mínima e máxima', async () => {
+        const checked = await evaluate(`(() => {
+          const game = window.__gameTest;
+          let checked = 0;
+          const check = (condition, message) => { if (!condition) throw new Error(message); };
+          for (const difficulty of [-2, 0, 6, 96]) {
+            for (const comfortablePace of [false, true]) {
+              for (const id of ['sort', 'pairs', 'path', 'sequence', 'differences', 'oddone', 'counting']) {
+                const label = id + ', dificuldade ' + difficulty + ', ritmo ' + comfortablePace;
+                game.start(id, { comfortablePace }, { difficulty });
+                const mount = game.mount, all = selector => [...mount.querySelectorAll(selector)];
+                const cards = all('.pair-card'), symbols = cards.map(card => card.textContent);
+                const before = mount.innerHTML;
+                game.pause(true);
+                all('button').forEach(button => button.click()); game.tick(150000);
+                check(mount.innerHTML === before && game.outcomes.length === 0, label + ': pausa alterou a partida');
+                game.pause(false);
+                if (id === 'sort') {
+                  const fruits = all('.fruit-tile'), baskets = all('.basket');
+                  fruits[0].click(); baskets.find(b => b.dataset.name !== fruits[0].dataset.name).click();
+                  for (const fruit of fruits) { fruit.click(); baskets.find(b => b.dataset.name === fruit.dataset.name).click(); }
+                } else if (id === 'pairs') {
+                  if (comfortablePace) mount.querySelector('#pairStart').click(); else game.tick(5000);
+                  cards[0].click(); cards[symbols.findIndex(symbol => symbol !== symbols[0])].click();
+                  if (comfortablePace) mount.querySelector('#pairContinue').click(); else game.tick(2000);
+                  for (const symbol of new Set(symbols)) cards.filter((_, i) => symbols[i] === symbol).forEach(card => card.click());
+                } else if (id === 'path') {
+                  const points = mount.querySelector('.path-base').points;
+                  for (let i = 0; i < points.numberOfItems; i++) {
+                    const p = points.getItem(i);
+                    check(p.x >= 15 && p.x <= 345 && p.y >= 15 && p.y <= 415, label + ': trilha fora da área visível');
+                  }
+                  const assist = mount.querySelector('#pathAssist');
+                  assist.click();
+                  check(!mount.querySelector('#counter').textContent.startsWith('Início'), label + ': primeiro clique não avança');
+                  for (let i = 0; i < points.numberOfItems; i++) assist.click();
+                  check(assist.disabled, label + ': trilha incompleta');
+                } else if (id === 'sequence') {
+                  if (comfortablePace) mount.querySelector('#sequenceStart').click(); else game.tick(150000);
+                  all('.sequence-pad')[1].click(); game.tick(150000);
+                  if (comfortablePace) mount.querySelector('#sequenceStart').click();
+                  const length = all('#sequencePreview li').length;
+                  for (let i = 0; i < length; i++) all('.sequence-pad')[0].click();
+                } else if (id === 'differences') {
+                  const left = all('#sceneA .scene-name'), right = all('#sceneB button');
+                  const different = right.filter((button, i) => button.querySelector('.scene-name').textContent !== left[i].textContent);
+                  right.find(button => !different.includes(button)).click();
+                  different.forEach(button => button.click());
+                } else if (id === 'oddone' || id === 'counting') {
+                  let lastTarget;
+                  for (let round = 1; round <= 3; round++) {
+                    check(mount.querySelector('#roundLabel').textContent === 'Rodada ' + round + ' de 3', label + ': rodada errada');
+                    if (id === 'oddone') {
+                      const tiles = all('.focus-tile');
+                      const odd = tiles.find(tile => tiles.filter(other => other.textContent === tile.textContent).length === 1);
+                      const regular = tiles.find(tile => tile !== odd);
+                      check(regular.textContent !== lastTarget, label + ': figuras não mudaram'); lastTarget = regular.textContent;
+                      if (round === 1) regular.click();
+                      odd.click();
+                    } else {
+                      const target = mount.querySelector('#countTip strong').textContent.split(' ').slice(1).join(' ');
+                      check(target !== lastTarget, label + ': objeto não mudou'); lastTarget = target;
+                      const quantity = all('.count-grid .count-object').filter(item => item.getAttribute('aria-label').endsWith(': ' + target)).length;
+                      check(quantity >= 2 && quantity <= 12, label + ': quantidade inválida');
+                      const answers = all('[data-answer]');
+                      check(new Set(answers.map(button => button.dataset.answer)).size === 3, label + ': respostas repetidas');
+                      if (round === 1) answers.find(button => Number(button.dataset.answer) !== quantity).click();
+                      answers.find(button => Number(button.dataset.answer) === quantity).click();
+                      check(all('.count-found').length === quantity, label + ': destaque incorreto');
+                    }
+                    check(mount.querySelector('#gameProgress').value === round, label + ': progresso errado');
+                    if (round < 3) {
+                      game.pause(true); mount.querySelector('.next-round').click(); game.tick(5000);
+                      check(mount.querySelector('#roundLabel').textContent === 'Rodada ' + round + ' de 3', label + ': avançou durante pausa');
+                      game.pause(false);
+                      if (comfortablePace) {
+                        game.tick(5000);
+                        check(mount.querySelector('#roundLabel').textContent === 'Rodada ' + round + ' de 3', label + ': não respeitou ritmo confortável');
+                        mount.querySelector('.next-round').click();
+                      } else game.tick(1100);
+                      check(game.outcomes.length === 0, label + ': concluiu antes da última rodada');
+                    }
+                  }
+                }
+                all('button').forEach(button => button.click());
+                game.pause(true); game.tick(5000);
+                check(game.outcomes.length === 0, label + ': concluiu durante a pausa');
+                game.pause(false); game.tick(1000);
+                check(game.outcomes.length === 1, label + ': conclusão ausente ou duplicada');
+                check(game.outcomes[0].mistakes === (id === 'path' ? 0 : 1), label + ': erros incorretos');
+                all('button').forEach(button => button.click()); game.tick(1000);
+                check(game.outcomes.length === 1, label + ': cliques extras repetiram a conclusão');
+                checked++;
+              }
+            }
+          }
+          return checked;
+        })()`);
+        assert.equal(checked, 56);
+      });
+
+      await accessibilityTest.test('sair entre rodadas cancela a transição automática', async () => {
+        for (const id of ['oddone', 'counting']) {
+          await evaluate(`(() => {
+            const game = window.__gameTest;
+            game.start(${JSON.stringify(id)}, { comfortablePace: false, reducedMotion: true });
+            const mount = game.mount;
+            if (${JSON.stringify(id)} === 'oddone') {
+              const tiles = [...mount.querySelectorAll('.focus-tile')];
+              tiles.find(tile => tiles.filter(other => other.textContent === tile.textContent).length === 1).click();
+            } else {
+              const target = mount.querySelector('#countTip strong').textContent.split(' ').slice(1).join(' ');
+              const quantity = [...mount.querySelectorAll('.count-grid .count-object')].filter(item => item.getAttribute('aria-label').endsWith(': ' + target)).length;
+              [...mount.querySelectorAll('[data-answer]')].find(button => Number(button.dataset.answer) === quantity).click();
+            }
+            if (mount.classList.contains('game-motion') || mount.querySelector('.game-celebrate')) throw Error('Redução de movimentos ignorada');
+            if (!mount.querySelector('.next-round')) throw Error('Transição não foi preparada');
+            game.start('sort'); game.tick(5000);
+          })()`);
+          assert.equal(await evaluate('window.__gameTest.mount.querySelectorAll(".fruit-tile").length'), 4);
+          assert.equal(await evaluate('window.__gameTest.outcomes.length'), 0);
+        }
+      });
+
+      await evaluate('window.__gameTest.start("counting")');
+      const countingTree = await cdp('Accessibility.getFullAXTree');
+      const countObjects = countingTree.nodes.filter(node => node.role?.value === 'button' && /^Objeto \d+:/.test(node.name?.value || ''));
+      assert.equal(countObjects.length, await evaluate('document.querySelectorAll(".count-grid .count-object").length'), 'Cada objeto da contagem pode ser lido individualmente.');
+      assert.ok(countObjects.every(node => /: [^\s]+/.test(node.name.value)));
+      await evaluate('document.querySelector(".count-object").click()');
+      assert.equal(await evaluate('document.querySelector(".count-object").getAttribute("aria-pressed")'), 'true');
+      assert.match(await evaluate('document.querySelector("#counter").textContent'), /1 objeto marcado/);
+      await evaluate('document.querySelector(".count-object").click()');
+      assert.equal(await evaluate('document.querySelector(".count-object").getAttribute("aria-pressed")'), 'false');
+      assert.match(await evaluate('document.querySelector("#counter").textContent'), /0 objetos marcados/);
 
       for (const width of [320, 360]) {
         await cdp('Emulation.setDeviceMetricsOverride', { width, height: 800, deviceScaleFactor: 1, mobile: true });
         for (const fontSize of ['', '40px']) {
           await evaluate(`document.documentElement.style.fontSize = ${JSON.stringify(fontSize)}`);
-          for (const id of ['sort', 'pairs', 'path', 'sequence', 'differences']) {
+          for (const id of ['sort', 'pairs', 'path', 'sequence', 'differences', 'oddone', 'counting']) {
             await evaluate(`window.__gameTest.start(${JSON.stringify(id)})`);
             await expectReflow(width, `${id}, ${width}px, fonte ${fontSize || 'normal'}`);
           }
@@ -353,4 +576,16 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
     } finally { await evaluate('window.__gameTest?.restore(); document.documentElement.style.fontSize = ""'); }
   });
   assert.deepEqual(errors, []);
+  await t.test('abrir index.html diretamente carrega a tela e responde aos cliques', async () => {
+    await cdp('Page.navigate', { url: pathToFileURL(resolve('index.html')).href });
+    for (let i = 0; i < 50; i++) {
+      if (await evaluate('!!document.querySelector("#welcomeForm")')) break;
+      await delay(100);
+    }
+    assert.equal(await evaluate('!!document.querySelector("#welcomeForm")'), true, 'A abertura direta não pode deixar o conteúdo em branco.');
+    await evaluate('document.querySelector("#welcomeName").value = "Ana"; document.querySelector("#welcomeForm").requestSubmit(); document.querySelector("[data-nav=map]").click()');
+    assert.equal(await evaluate('document.querySelectorAll(".map-node").length'), 15);
+    await evaluate('document.querySelector(".map-node").click()');
+    assert.ok(await evaluate('document.querySelectorAll(".fruit-tile").length') > 0);
+  });
 });

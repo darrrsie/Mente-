@@ -28,11 +28,12 @@
   <dialog id="appDialog" aria-labelledby="dialogTitle" aria-describedby="dialogDescription">
     <form id="dialogForm" class="dialog-card" novalidate>
       <h2 id="dialogTitle"></h2><p id="dialogDescription" class="dialog-description"></p>
+      <div id="dialogGuide" hidden></div>
       <div id="dialogField" class="dialog-field" hidden><label for="dialogName">Como você gostaria de ser chamado?</label><input id="dialogName" name="name" type="text" autocomplete="given-name" maxlength="24" aria-describedby="dialogError"></div>
       <p id="dialogError" class="dialog-error" role="alert"></p>
       <div class="dialog-actions"><button type="button" class="secondary-button" data-dialog="cancel">Cancelar</button><button type="submit" class="primary-button" data-dialog="confirm">Confirmar</button></div>
     </form>
   </dialog>
-  <script type="module" src="./src/app.js"></script>
+  <script defer src="./src/app.bundle.js"></script>
 </body>
 </html>
