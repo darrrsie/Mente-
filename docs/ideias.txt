@@ -1,5 +1,0 @@
--colocar uma interface simples dinamica e padrão , vou coloca rum foto de referencia.
--colocar ofenciva tipo a do duolingo.
--colocar moedas ou algo do tipo para comprar mais fases ou coisas legais e funcionais no app.
--Começar com um tutorial e instruções.
--dependendo do jogo escolhido fazer por fazer pique o candy crush.

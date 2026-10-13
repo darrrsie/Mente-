@@ -1,9 +1,0 @@
-{
-  "appId": "com.jardimdamente.app",
-  "appName": "Mente & Movimento",
-  "webDir": "dist",
-  "backgroundColor": "#fbf8f2",
-  "android": {
-    "zoomEnabled": true
-  }
-}

@@ -17,8 +17,8 @@ const chrome = process.env.CHROME_PATH || [
 test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !chrome && 'Defina CHROME_PATH para executar.', timeout: 90000 }, async t => {
   const profile = await mkdtemp(join(tmpdir(), 'mente-browser-test-'));
   const files = new Map([
-    ['/', ['dist/index.html', 'text/html']], ['/src/app.js', ['dist/src/app.js', 'text/javascript']],
-    ['/src/styles.css', ['dist/src/styles.css', 'text/css']], ['/assets/map-meadow.png', ['dist/assets/map-meadow.png', 'image/png']],
+    ['/', ['index.html', 'text/html']], ['/src/app.js', ['src/app.js', 'text/javascript']],
+    ['/src/styles.css', ['src/styles.css', 'text/css']], ['/assets/icon-512.png', ['assets/icon-512.png', 'image/png']],
     ['/test-games.js', ['src/games.js', 'text/javascript']]
   ]);
   const requests = [];
@@ -85,8 +85,8 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
   assert.equal(await evaluate('document.documentElement.scrollWidth <= 360'), true);
   assert.equal(await evaluate('document.querySelector("#storageNotice").hidden'), true);
   await evaluate('document.querySelector("[data-nav=map]").click()');
-  assert.equal(await evaluate('document.querySelectorAll(".map-node").length'), 5);
-  assert.deepEqual(await evaluate('[...document.querySelectorAll(".map-node")].map(button => button.dataset.id)'), ['sort', 'pairs', 'path', 'sequence', 'differences']);
+  assert.equal(await evaluate('document.querySelectorAll(".map-node").length'), 15);
+  assert.deepEqual(await evaluate('[...document.querySelectorAll(".map-node")].map(button => Number(button.dataset.id))'), Array.from({ length: 15 }, (_, index) => index + 1));
   await evaluate('document.querySelector("[data-action=preferences]").click()');
   assert.equal(await evaluate('document.activeElement === document.querySelector("#view h1")'), true);
   assert.equal(await evaluate('document.querySelector("[data-setting=comfortablePace]").checked'), true);

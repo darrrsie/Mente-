@@ -1,66 +1,38 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7f1ff">
-  <meta name="description" content="Baixe o aplicativo Mente & Movimento para Android.">
-  <title>Baixar Mente & Movimento</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; min-height: 100svh; padding: 26px 18px; display: grid; place-items: center; background: linear-gradient(160deg, #f3eafd, #fff9ee 68%); color: #302847; font-family: system-ui, -apple-system, sans-serif; }
-    main { width: min(100%, 520px); padding: 32px; border: 1px solid #e7d9f5; border-radius: 28px; background: #fffefa; box-shadow: 0 18px 45px #5c417319; }
-    .brand { display: flex; align-items: center; gap: 15px; }
-    .brand img { width: 72px; height: 72px; border-radius: 18px; }
-    .brand strong { color: #59418a; font-size: 20px; line-height: 1.1; }
-    h1 { margin: 27px 0 10px; font-size: clamp(29px, 7vw, 38px); line-height: 1.15; letter-spacing: -.04em; }
-    p { color: #5e6271; font-size: 17px; line-height: 1.55; }
-    .download { min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 10px; margin: 27px 0 12px; padding: 14px 20px; border-radius: 16px; background: #7050b2; color: #fff; font-size: 18px; font-weight: 800; text-align: center; text-decoration: none; box-shadow: 0 5px 0 #513784; }
-    .download:hover { background: #5c3e9d; }
-    .download:focus-visible { outline: 3px solid #1d62bb; outline-offset: 4px; }
-    .compatibility { margin: 0; color: #6f6481; font-size: 14px; text-align: center; }
-    .steps { margin-top: 32px; padding-top: 23px; border-top: 1px solid #ece5f2; }
-    h2 { margin: 0 0 16px; font-size: 19px; }
-    ol { margin: 0; padding-left: 24px; color: #4f5562; line-height: 1.7; }
-    li + li { margin-top: 7px; }
-    .note { margin: 25px 0 0; color: #697386; font-size: 13px; }
-    @media (max-width: 420px) { main { padding: 25px 21px; } }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fbf8f2">
+  <meta name="description" content="Mente & Movimento: jogos leves de memória, atenção e coordenação.">
+  <title>Mente & Movimento</title>
+  <link rel="icon" href="./assets/icon-512.png" type="image/png">
+  <link rel="stylesheet" href="./src/styles.css">
 </head>
 <body>
-  <main>
-    <div class="brand">
-      <img src="assets/icon-512.png" alt="" width="72" height="72">
-      <strong>Mente &amp;<br>Movimento</strong>
-    </div>
-    <h1>Uma aventura para jogar no seu ritmo.</h1>
-    <p>Divirta-se com cinco jogos de memória, atenção e coordenação. Jogue sem internet após a instalação e acompanhe seu progresso neste aparelho.</p>
-    <a class="download" href="release/Mente-e-Movimento-Android-debug.apk" download="Mente-e-Movimento.apk">Baixar para Android <span aria-hidden="true">↓</span></a>
-    <p class="compatibility">Grátis · Android 7.0 ou superior · versão de teste<br>Use o Android System WebView ou Chrome atualizado.</p>
-    <section class="steps" aria-labelledby="install-title">
-      <h2 id="install-title">Como instalar</h2>
-      <ol>
-        <li>Toque em <strong>Baixar para Android</strong> e aguarde o download terminar.</li>
-        <li>Abra o arquivo <strong>Mente-e-Movimento.apk</strong> na pasta Downloads. O navegador também pode manter o nome Mente-e-Movimento-Android-debug.apk.</li>
-        <li>Se solicitado, abra as configurações e permita <strong>Instalar apps desconhecidos</strong> apenas para o navegador ou gerenciador de arquivos usado. Volte e toque em <strong>Instalar</strong>.</li>
-        <li>Depois da instalação, você pode revogar essa permissão. Abra <strong>Mente &amp; Movimento</strong> na lista de aplicativos.</li>
-      </ol>
-    </section>
-    <section class="steps" aria-labelledby="help-title">
-      <h2 id="help-title">Precisa de ajuda?</h2>
-      <details><summary>O Android informa “O app não foi instalado”</summary>
-        <p>Confira se o aparelho usa Android 7.0 ou superior e se há espaço livre. Apague apenas o APK baixado incompleto e baixe novamente. Abra o arquivo somente quando o download terminar.</p>
-        <p>Se continuar falhando, registre a mensagem completa e a versão do Android para o responsável pelo aplicativo. Não desinstale uma versão existente sem preservar seu progresso.</p>
-      </details>
-      <details><summary>A página não abre pelo Wi-Fi</summary>
-        <p>Conecte o celular à mesma rede do computador. Use o endereço mostrado pelo servidor, começando com <strong>http://</strong> e incluindo <strong>:8765</strong> (ou a porta configurada). O computador precisa estar ligado e com o servidor em execução.</p>
-        <p>Redes de convidados podem bloquear a comunicação entre aparelhos. O responsável pelo computador deve verificar a regra de acesso local sem desativar o firewall.</p>
-      </details>
-      <details><summary>Onde fica meu progresso?</summary>
-        <p>O progresso fica salvo neste aparelho, sem conta ou sincronização. Desinstalar o aplicativo ou limpar seus dados pode apagar as partidas e preferências.</p>
-      </details>
-    </section>
-    <p class="note">APK de desenvolvimento para testes. Android 7.0 ou superior. <a href="release/SHA256.txt">Ver código de integridade SHA-256</a>.</p>
-  </main>
+  <a class="skip-link" href="#view">Pular para o conteúdo</a>
+  <div class="app-shell">
+    <header class="topbar">
+      <button type="button" class="brand" data-action="home" aria-label="Ir ao início"><span class="brand-symbol" aria-hidden="true">✦</span><span>Mente <b>&</b><br>Movimento</span></button>
+      <div class="topbar-right"><span id="levelChip" class="level-chip">Nível 1</span><span id="xpChip" class="xp-chip">✦ 0 XP</span><button type="button" class="accessibility-link" data-action="preferences" aria-label="Acessibilidade e preferências">Acessibilidade</button></div>
+    </header>
+    <p id="storageNotice" class="storage-notice" role="status" hidden></p>
+    <main id="view" tabindex="-1" aria-label="Conteúdo principal"></main>
+    <nav class="bottom-nav" aria-label="Navegação principal">
+      <button type="button" data-action="home" data-nav="home"><span aria-hidden="true">⌂</span>Início</button>
+      <button type="button" data-action="map" data-nav="map"><span aria-hidden="true">◉</span>Mapa</button>
+      <button type="button" data-action="profile" data-nav="profile"><span aria-hidden="true">♙</span>Perfil</button>
+    </nav>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <dialog id="appDialog" aria-labelledby="dialogTitle" aria-describedby="dialogDescription">
+    <form id="dialogForm" class="dialog-card" novalidate>
+      <h2 id="dialogTitle"></h2><p id="dialogDescription" class="dialog-description"></p>
+      <div id="dialogField" class="dialog-field" hidden><label for="dialogName">Como você gostaria de ser chamado?</label><input id="dialogName" name="name" type="text" autocomplete="given-name" maxlength="24" aria-describedby="dialogError"></div>
+      <p id="dialogError" class="dialog-error" role="alert"></p>
+      <div class="dialog-actions"><button type="button" class="secondary-button" data-dialog="cancel">Cancelar</button><button type="submit" class="primary-button" data-dialog="confirm">Confirmar</button></div>
+    </form>
+  </dialog>
+  <script type="module" src="./src/app.js"></script>
 </body>
 </html>

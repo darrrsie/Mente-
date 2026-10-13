@@ -104,7 +104,7 @@ test('falha de gravação é informada e uma nova tentativa pode recuperar o sal
   globalThis.localStorage = working;
 });
 
-test('armazenamento bloqueado não impede o aplicativo de iniciar', async () => {
+test('armazenamento bloqueado não impede o site de iniciar', async () => {
   const working = globalThis.localStorage;
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, get() { throw new Error('SecurityError'); } });
   try {

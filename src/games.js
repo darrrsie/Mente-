@@ -1,7 +1,7 @@
 const shuffle = list => { const copy = [...list]; for (let i = copy.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [copy[i], copy[j]] = [copy[j], copy[i]]; } return copy; };
-const fruits = [{ icon: '🍎', name: 'Maçã' }, { icon: '🍌', name: 'Banana' }, { icon: '🍊', name: 'Laranja' }, { icon: '🍓', name: 'Morango' }, { icon: '🍐', name: 'Pera' }];
+const fruits = [{ icon: '🍎', name: 'Maçã' }, { icon: '🍌', name: 'Banana' }, { icon: '🍊', name: 'Laranja' }, { icon: '🍓', name: 'Morango' }, { icon: '🍐', name: 'Pera' }, { icon: '🍇', name: 'Uva' }, { icon: '🍑', name: 'Pêssego' }, { icon: '🍉', name: 'Melancia' }, { icon: '🍍', name: 'Abacaxi' }, { icon: '🥝', name: 'Kiwi' }];
 
-export function startGame({ id, mount, support = 0, settings = {}, onComplete, onFeedback = () => {}, playSound = () => {} }) {
+export function startGame({ id, mount, support = 0, difficulty = 0, settings = {}, onComplete, onFeedback = () => {}, playSound = () => {} }) {
   let closed = false, mistakes = 0, paused = false, pausedAt = 0, pausedMs = 0;
   const started = performance.now(), timers = new Set();
   const schedule = timer => {
@@ -17,7 +17,7 @@ export function startGame({ id, mount, support = 0, settings = {}, onComplete, o
   const error = message => { mistakes++; onFeedback(message, false); playSound(false); };
   const success = message => { onFeedback(message, true); playSound(true); };
   const finish = () => { if (closed) return; closed = true; onComplete({ mistakes, elapsedSeconds: Math.round((performance.now() - started - pausedMs) / 1000) }); };
-  const count = Math.max(-2, Math.min(2, support));
+  const count = Math.max(-2, Math.min(96, Math.floor(support + difficulty)));
   mount.innerHTML = '<div class="game-area" id="gameArea"></div>';
   const area = mount.querySelector('#gameArea');
   const comfortablePace = Boolean(settings.comfortablePace);
@@ -28,6 +28,8 @@ export function startGame({ id, mount, support = 0, settings = {}, onComplete, o
   if (id === 'path') pathGame();
   if (id === 'sequence') sequenceGame();
   if (id === 'differences') differencesGame();
+  if (id === 'oddone') oddOneGame();
+  if (id === 'counting') countingGame();
   const counter = area.querySelector('#counter');
   if (counter) {
     counter.setAttribute('role', 'status');
@@ -51,7 +53,8 @@ export function startGame({ id, mount, support = 0, settings = {}, onComplete, o
   return cleanup;
 
   function sortGame() {
-    const items = shuffle(fruits.slice(0, count <= -1 ? 3 : count >= 1 ? 5 : 4));
+    const itemCount = Math.max(3, Math.min(fruits.length, 4 + count));
+    const items = shuffle(fruits.slice(0, itemCount));
     let selected = null, placed = 0;
     area.innerHTML = `<p class="game-tip">Escolha uma fruta e depois sua cesta. Use toque ou teclado. Se preferir, arraste a fruta.</p>
       <div class="sort-items" id="sortItems"></div><div class="sort-baskets" id="sortBaskets"></div>
@@ -125,8 +128,8 @@ export function startGame({ id, mount, support = 0, settings = {}, onComplete, o
   }
 
   function pairsGame() {
-    const symbols = [{ icon: '🌼', name: 'Margarida' }, { icon: '🦋', name: 'Borboleta' }, { icon: '🍓', name: 'Morango' }, { icon: '🌻', name: 'Girassol' }, { icon: '🐝', name: 'Abelha' }];
-    const pairCount = count <= -1 ? 2 : count >= 1 ? 4 : 3;
+    const symbols = [{ icon: '🌼', name: 'Margarida' }, { icon: '🦋', name: 'Borboleta' }, { icon: '🍓', name: 'Morango' }, { icon: '🌻', name: 'Girassol' }, { icon: '🐝', name: 'Abelha' }, { icon: '🐞', name: 'Joaninha' }, { icon: '🍄', name: 'Cogumelo' }, { icon: '🌈', name: 'Arco-íris' }, { icon: '🐢', name: 'Tartaruga' }, { icon: '🐸', name: 'Sapo' }, { icon: '🌷', name: 'Tulipa' }, { icon: '🐌', name: 'Caracol' }, { icon: '🦔', name: 'Ouriço' }, { icon: '🍒', name: 'Cereja' }, { icon: '🌺', name: 'Hibisco' }, { icon: '🐠', name: 'Peixe' }, { icon: '🪷', name: 'Lótus' }, { icon: '🦜', name: 'Arara' }, { icon: '🍋', name: 'Limão' }, { icon: '🐿️', name: 'Esquilo' }];
+    const pairCount = Math.max(2, Math.min(symbols.length, 3 + count));
     const deck = shuffle([...symbols.slice(0, pairCount), ...symbols.slice(0, pairCount)]);
     let first = null, locked = true, matched = 0, previewing = true, manual = comfortablePace, previewTimer = null, mismatchTimer = null, unmatched = [];
     area.innerHTML = `<p class="game-tip" id="pairTip">Observe as figuras e a posição de cada carta.</p>
@@ -215,9 +218,14 @@ export function startGame({ id, mount, support = 0, settings = {}, onComplete, o
   }
 
   function pathGame() {
-    const points = Array.from({ length: 28 }, (_, i) => ({ x: 35 + i * 10.6, y: 375 - i * 11.4 + Math.sin(i * 0.6) * (count <= -1 ? 20 : count >= 1 ? 36 : 28) }));
+    const segmentCount = 28 + Math.max(0, count) * 3;
+    const amplitude = Math.min(56, 28 + Math.max(0, count) * 2);
+    const points = Array.from({ length: segmentCount }, (_, i) => {
+      const progress = i / (segmentCount - 1);
+      return { x: 35 + progress * 290, y: 375 - progress * 315 + Math.sin(i * 0.6) * amplitude };
+    });
     const coords = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-    const threshold = count <= -1 ? 45 : count >= 1 ? 29 : 36;
+    const threshold = Math.max(14, 36 - Math.max(0, count) * 1.7);
     let index = 0, drawing = false, misses = 0;
     area.innerHTML = `<p class="game-tip" id="pathTip">Siga da flor até a borboleta. Você pode deslizar na trilha ou usar o botão abaixo com toque, Enter ou Espaço.</p>
       <div class="path-wrap"><svg id="pathSvg" viewBox="0 0 360 430" role="img" aria-label="Trilha da flor até a borboleta">
@@ -278,7 +286,7 @@ export function startGame({ id, mount, support = 0, settings = {}, onComplete, o
 
   function sequenceGame() {
     const colors = [{ name: 'Rosa', shape: 'Círculo', icon: '●', cls: 'pink' }, { name: 'Azul', shape: 'Losango', icon: '◆', cls: 'blue' }, { name: 'Amarelo', shape: 'Triângulo', icon: '▲', cls: 'yellow' }, { name: 'Verde', shape: 'Estrela', icon: '★', cls: 'green' }];
-    const length = count <= -1 ? 3 : count >= 1 ? 5 : 4;
+    const length = Math.max(3, Math.min(100, 4 + count));
     const sequence = Array.from({ length }, () => Math.floor(Math.random() * 4));
     let position = 0, showing = true, completed = false, manual = comfortablePace, sequenceTimers = [];
     area.innerHTML = `<p class="game-tip" id="seqTip">Memorize a ordem das cores e formas. Depois repita a sequência.</p>
@@ -347,9 +355,14 @@ export function startGame({ id, mount, support = 0, settings = {}, onComplete, o
 
   function differencesGame() {
     const base = [{ icon: '🌞', name: 'Sol' }, { icon: '☁️', name: 'Nuvem' }, { icon: '🌳', name: 'Árvore' }, { icon: '🌷', name: 'Tulipa' }, { icon: '🦋', name: 'Borboleta' }, { icon: '🍄', name: 'Cogumelo' }, { icon: '🐝', name: 'Abelha' }, { icon: '🌼', name: 'Margarida' }, { icon: '🌈', name: 'Arco-íris' }];
-    const changed = { 1: { icon: '🌧️', name: 'Chuva' }, 3: { icon: '🌻', name: 'Girassol' }, 4: { icon: '🐞', name: 'Joaninha' }, 5: { icon: '🪨', name: 'Pedra' } };
-    const targetCount = count <= -1 ? 2 : count >= 1 ? 4 : 3;
-    const targets = [3, 4, 5, 1].slice(0, targetCount);
+    const changed = {
+      1: { icon: '🌧️', name: 'Chuva' }, 2: { icon: '🌲', name: 'Pinheiro' },
+      3: { icon: '🌻', name: 'Girassol' }, 4: { icon: '🐞', name: 'Joaninha' },
+      5: { icon: '🪨', name: 'Pedra' }, 6: { icon: '🌙', name: 'Lua' },
+      7: { icon: '🪻', name: 'Lavanda' }, 8: { icon: '🌤️', name: 'Sol entre nuvens' }
+    };
+    const targetCount = Math.max(2, Math.min(8, 3 + count));
+    const targets = [3, 4, 5, 1, 2, 6, 7, 8].slice(0, targetCount);
     const found = new Set();
     area.innerHTML = `<p class="game-tip" id="differencesTip">Compare os objetos na mesma linha e coluna dos jardins A e B. No jardim B, escolha os objetos diferentes. Use toque ou teclado.</p>
       <div class="scene-pair"><div class="scene"><h3 id="sceneATitle">Jardim A</h3><div class="scene-grid" id="sceneA" role="group" aria-labelledby="sceneATitle"></div></div>
@@ -377,5 +390,49 @@ export function startGame({ id, mount, support = 0, settings = {}, onComplete, o
       });
       right.appendChild(b);
     });
+  }
+
+  function oddOneGame() {
+    const symbols = [{ icon: '🌼', name: 'flor' }, { icon: '🍃', name: 'folha' }, { icon: '🍄', name: 'cogumelo' }, { icon: '🦋', name: 'borboleta' }, { icon: '🐞', name: 'joaninha' }, { icon: '🍓', name: 'morango' }];
+    const target = symbols[Math.floor(Math.random() * symbols.length)];
+    const alternatives = symbols.filter(item => item !== target), different = alternatives[Math.floor(Math.random() * alternatives.length)];
+    const tileCount = Math.min(30, 9 + Math.floor(Math.max(0, count) / 3) * 3), oddIndex = Math.floor(Math.random() * tileCount);
+    area.innerHTML = `<p class="game-tip" id="oddTip">Observe a grade e toque no único símbolo que não se repete.</p><div class="focus-grid" id="focusGrid" role="group" aria-label="Símbolos para encontrar o diferente"></div><p class="game-counter" id="counter">Encontre o símbolo diferente.</p>`;
+    const grid = area.querySelector('#focusGrid');
+    for (let i = 0; i < tileCount; i++) {
+      const item = i === oddIndex ? different : target;
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'focus-tile'; button.textContent = item.icon;
+      button.setAttribute('aria-label', `Símbolo ${i + 1}: ${item.name}. Selecionar se for o diferente.`);
+      button.addEventListener('click', () => {
+        if (closed || paused || button.disabled) return;
+        if (i !== oddIndex) { error(`${item.name} aparece repetido. Continue procurando o único símbolo diferente.`); return; }
+        button.classList.add('found');
+        grid.querySelectorAll('button').forEach(tile => { tile.disabled = true; });
+        area.querySelector('#counter').textContent = `Encontrado: ${different.name}.`;
+        success('Boa observação! Você encontrou o símbolo diferente.'); later(finish, 500);
+      });
+      grid.appendChild(button);
+    }
+  }
+
+  function countingGame() {
+    const symbols = ['🍎', '🍐', '🍊', '🍋', '🍇', '🍓', '🍒', '🥝', '🍑', '🍉', '🍍', '🥕', '🌽', '🥦', '🧅', '🥔', '🫑', '🥒'];
+    const target = symbols[Math.floor(Math.random() * symbols.length)];
+    const targetCount = Math.min(12, 3 + Math.floor(Math.max(0, count) / 4));
+    const distractorCount = Math.min(18, 8 + Math.floor(Math.max(0, count) / 4));
+    const board = shuffle([...Array(targetCount).fill(target), ...Array.from({ length: distractorCount }, () => {
+      let item = target; while (item === target) item = symbols[Math.floor(Math.random() * symbols.length)]; return item;
+    })]);
+    const answers = [...new Set([targetCount, Math.max(1, targetCount - 1), Math.min(15, targetCount + 1)])].sort((a, b) => a - b);
+    area.innerHTML = `<p class="game-tip" id="countTip">Conte quantas vezes aparece o símbolo <strong aria-label="símbolo pedido">${target}</strong>. Depois escolha a quantidade.</p><div class="count-grid" role="img" aria-label="${board.length} símbolos misturados para contar">${board.map((item, i) => `<span aria-hidden="true" title="Objeto ${i + 1}">${item}</span>`).join('')}</div><div class="answer-grid" role="group" aria-label="Escolha a quantidade de ${target}">${answers.map(answer => `<button type="button" class="secondary-button" data-answer="${answer}">${answer}</button>`).join('')}</div><p class="game-counter" id="counter">Quantos ${target} você encontrou?</p>`;
+    area.querySelectorAll('[data-answer]').forEach(button => button.addEventListener('click', () => {
+      if (closed || paused || button.disabled) return;
+      const answer = Number(button.dataset.answer);
+      if (answer !== targetCount) { error(`Não foram ${answer}. Conte novamente apenas os símbolos ${target}.`); return; }
+      area.querySelectorAll('[data-answer]').forEach(option => { option.disabled = true; });
+      area.querySelector('#counter').textContent = `Isso mesmo: havia ${targetCount} símbolos ${target}.`;
+      success('Contagem correta!'); later(finish, 500);
+    }));
   }
 }

@@ -1,5 +1,5 @@
-# The XAMPP download page must not expose source, Git history or signing keys.
+# Public web game. Permit only the page and browser assets; block project files.
 Options -Indexes
 RewriteEngine On
-RewriteRule ^(?:index\.html|assets/icon-512\.png|release/Mente-e-Movimento-Android-debug\.apk|release/SHA256\.txt)?$ - [END]
+RewriteRule ^(?:index\.html|src/(?:app\.js|games\.js|state\.js|styles\.css)|assets/icon-512\.png)$ - [END]
 RewriteRule ^ - [F]
