@@ -16,7 +16,10 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
   const cancel = timer => { if (timer) { clearTimeout(timer.id); timers.delete(timer); } };
   let streak = 0, round = 1, changingRound = false, previousTarget = null, celebrationTimer;
   const totalRounds = ['oddone', 'counting'].includes(id) ? 3 : 1;
-  const error = message => { mistakes++; streak = 0; updateStreak(); onFeedback(message, false); playSound(false); };
+  const error = (message, element) => {
+    mistakes++; streak = 0; updateStreak(); onFeedback(message, false); playSound(false);
+    if (element) { element.classList.add('try-again'); later(() => element.classList.remove('try-again'), 900); }
+  };
   const success = message => {
     streak++; updateStreak(); onFeedback(message, true); playSound(true);
     if (!reducedMotion) {
@@ -27,13 +30,17 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
   };
   const finish = () => { if (closed) return; closed = true; onComplete({ mistakes, elapsedSeconds: Math.round((performance.now() - started - pausedMs) / 1000) }); };
   const count = Math.max(-2, Math.min(96, Math.floor(support + difficulty)));
-  mount.innerHTML = '<div class="game-hud"><div class="game-hud-labels"><strong id="roundLabel"></strong><span id="gameStreak" role="status" aria-live="polite">Vamos lá!</span></div><progress id="gameProgress" max="1" value="0" aria-label="Progresso da partida"></progress></div><div class="game-area" id="gameArea"></div>';
+  mount.dataset.game = id;
+  mount.innerHTML = '<div class="game-hud"><div class="game-hud-labels"><strong id="roundLabel"></strong><span id="gameStreak">No seu ritmo</span></div><div class="game-progress-row"><progress id="gameProgress" max="1" value="0" aria-label="Progresso da partida"></progress><span id="gameProgressText" aria-hidden="true">0 / 1</span></div></div><div class="game-area" id="gameArea"></div>';
   const area = mount.querySelector('#gameArea');
   const comfortablePace = Boolean(settings.comfortablePace);
   const reducedMotion = Boolean(settings.reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   mount.classList.toggle('game-motion', !reducedMotion);
   mount.classList.remove('game-paused');
-  function progress(value, max) { const bar = mount.querySelector('#gameProgress'); bar.max = max; bar.value = value; }
+  function progress(value, max) {
+    const bar = mount.querySelector('#gameProgress'); bar.max = max; bar.value = value;
+    mount.querySelector('#gameProgressText').textContent = `${value} / ${max}`;
+  }
   function updateStreak() { mount.querySelector('#gameStreak').textContent = streak > 1 ? `✦ ${streak} acertos seguidos!` : streak === 1 ? '✦ Boa jogada!' : 'Vamos tentar de novo!'; }
   function prepareRound() {
     mount.querySelector('#roundLabel').textContent = totalRounds > 1 ? `Rodada ${round} de ${totalRounds}` : 'Cada acerto conta';
@@ -89,7 +96,9 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
     const items = shuffle(fruits).slice(0, itemCount);
     progress(0, items.length);
     let selected = null, placed = 0;
-    area.innerHTML = `<p class="game-tip">Escolha uma fruta e depois sua cesta. Use toque ou teclado. Se preferir, arraste a fruta.</p>
+    area.innerHTML = `<p class="game-tip">Toque em uma fruta. Depois, toque na cesta com o mesmo nome.</p>
+      <div class="sort-steps" aria-hidden="true"><span class="active">1 · Escolha a fruta</span><span>2 · Escolha a cesta</span></div>
+      <p class="sort-selection" id="sortSelection">Qual fruta vamos guardar?</p>
       <div class="sort-items" id="sortItems"></div><div class="sort-baskets" id="sortBaskets"></div>
       <p class="game-counter" id="counter">0 de ${items.length} objetos organizados</p>`;
     const tray = area.querySelector('#sortItems'), baskets = area.querySelector('#sortBaskets');
@@ -98,12 +107,15 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
       tray.querySelectorAll('.fruit-tile').forEach(el => { el.classList.remove('selected'); el.setAttribute('aria-pressed', 'false'); });
       selected = button; button.classList.add('selected');
       button.setAttribute('aria-pressed', 'true');
+      area.querySelector('#sortSelection').textContent = `${button.dataset.icon} ${button.dataset.name} selecionada. Agora escolha a cesta.`;
+      area.querySelectorAll('.sort-steps span').forEach((step, index) => step.classList.toggle('active', index === 1));
+      baskets.classList.add('awaiting-choice');
       onFeedback(`Agora escolha a cesta de ${button.dataset.name}.`, true);
     }
     function place(name) {
       if (closed || paused) return;
       if (!selected) { onFeedback('Escolha uma fruta antes de selecionar a cesta.', false); return; }
-      if (selected.dataset.name !== name) { error(`Essa é a cesta de ${name}. Escolha a cesta de ${selected.dataset.name}, que é a fruta selecionada.`); return; }
+      if (selected.dataset.name !== name) { error(`Essa é a cesta de ${name}. Procure a cesta de ${selected.dataset.name}.`, [...baskets.children].find(el => el.dataset.name === name)); return; }
       const basket = [...baskets.children].find(el => el.dataset.name === name);
       basket.classList.add('filled');
       basket.querySelector('.basket-result').textContent = selected.dataset.icon;
@@ -114,6 +126,9 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
       selected.setAttribute('aria-label', `${name}, fruta organizada`);
       basket.disabled = true;
       selected = null; placed++;
+      baskets.classList.remove('awaiting-choice');
+      area.querySelectorAll('.sort-steps span').forEach((step, index) => step.classList.toggle('active', index === 0 && placed < items.length));
+      area.querySelector('#sortSelection').textContent = placed === items.length ? 'Feira organizada! Tudo no seu lugar.' : 'Muito bem! Escolha outra fruta.';
       progress(placed, items.length);
       area.querySelector('#counter').textContent = `${placed} de ${items.length} objetos organizados`;
       if (placed === items.length) { success('Todas as frutas estão no lugar!'); later(finish, 550); }
@@ -176,11 +191,13 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
       <button type="button" class="secondary-button" id="pairContinue" hidden>Virar cartas e continuar</button></div>
       <p class="game-counter" id="counter">0 de ${pairCount} pares encontrados</p>`;
     const grid = area.querySelector('#pairsGrid');
+    grid.style.setProperty('--pair-columns', pairCount <= 3 ? 3 : 4);
     const start = area.querySelector('#pairStart'), pace = area.querySelector('#pairPace'), next = area.querySelector('#pairContinue');
     const cards = deck.map((symbol, i) => {
       const card = document.createElement('button');
       card.type = 'button'; card.className = 'pair-card revealed';
-      card.textContent = symbol.icon; card.setAttribute('aria-label', `Carta ${i + 1}, ${symbol.name}, revelada`);
+      card.innerHTML = `<span class="pair-symbol" aria-hidden="true">${symbol.icon}</span><small aria-hidden="true">${symbol.name}</small>`;
+      card.setAttribute('aria-label', `Carta ${i + 1}, ${symbol.name}, revelada`);
       card.setAttribute('aria-disabled', 'true');
       card.addEventListener('click', () => flip(i)); grid.appendChild(card); return card;
     });
@@ -191,7 +208,8 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
       });
     }
     function hideCard(i) {
-      cards[i].textContent = '✿'; cards[i].classList.remove('revealed');
+      cards[i].innerHTML = `<span class="pair-symbol" aria-hidden="true">✿</span><small aria-hidden="true">Carta ${i + 1}</small>`;
+      cards[i].classList.remove('revealed');
       cards[i].setAttribute('aria-label', `Carta ${i + 1}, fechada. Ative para revelar a figura.`);
       cards[i].removeAttribute('aria-disabled');
     }
@@ -229,7 +247,8 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
     else previewTimer = later(begin, count <= -1 ? 4000 : 2700);
     function flip(i) {
       if (closed || paused || locked || cards[i].disabled || first === i) return;
-      cards[i].textContent = deck[i].icon; cards[i].classList.add('revealed');
+      cards[i].innerHTML = `<span class="pair-symbol" aria-hidden="true">${deck[i].icon}</span><small aria-hidden="true">${deck[i].name}</small>`;
+      cards[i].classList.add('revealed');
       cards[i].setAttribute('aria-label', `Carta ${i + 1}, ${deck[i].name}, revelada`);
       if (first === null) { first = i; updateAvailability(); onFeedback(`Carta ${i + 1}: ${deck[i].name}. Escolha outra carta.`, true); return; }
       const previous = first; first = null; locked = true;
@@ -269,7 +288,9 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
     progress(0, points.length - 1);
     area.innerHTML = `<p class="game-tip" id="pathTip">Siga da flor até a borboleta. Você pode deslizar na trilha ou usar o botão abaixo com toque, Enter ou Espaço.</p>
       <div class="path-wrap"><svg id="pathSvg" viewBox="0 0 360 430" role="img" aria-label="Trilha da flor até a borboleta">
+      <g class="path-landscape" aria-hidden="true"><path d="M0 290Q95 235 190 285T360 250V430H0Z" fill="#e1efd7"/><path d="M0 360Q100 310 210 355T360 330V430H0Z" fill="#cfe5c7"/><circle cx="55" cy="60" r="24" fill="#ffecad"/><path d="M230 95h65m-230 85h42" stroke="#fff" stroke-width="15" stroke-linecap="round"/><text x="24" y="280" font-size="24">🌿</text><text x="290" y="350" font-size="24">🌼</text></g>
       <polyline class="path-base" points="${coords}"/><polyline id="pathDone" class="path-done" points="${points[0].x},${points[0].y}"/>
+      ${[1, 2, 3].map(step => { const checkpoint = Math.ceil((points.length - 1) * step / 3), point = points[checkpoint]; return `<circle class="path-checkpoint" data-checkpoint="${checkpoint}" cx="${point.x}" cy="${point.y}" r="9" aria-hidden="true"/>`; }).join('')}
       <text x="12" y="409" class="path-emoji">🌼</text><text x="307" y="62" class="path-emoji">🦋</text>
       <circle id="pathMarker" class="path-marker" cx="${points[0].x}" cy="${points[0].y}" r="15"/></svg></div>
       <p class="game-counter" id="counter">Início da trilha: flor. 0 de ${points.length - 1} trechos percorridos.</p>
@@ -292,6 +313,7 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
       updatePathProgress();
       marker.setAttribute('cx', point.x); marker.setAttribute('cy', point.y);
       done.setAttribute('points', points.slice(0, index + 1).map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+      area.querySelectorAll('.path-checkpoint').forEach(point => point.classList.toggle('reached', index >= Number(point.dataset.checkpoint)));
       const progress = `${index} de ${points.length - 1} trechos percorridos (${Math.round(index / (points.length - 1) * 100)}%).`;
       area.querySelector('#counter').textContent = progress;
       svg.setAttribute('aria-label', `Trilha da flor até a borboleta. ${progress}`);
@@ -330,7 +352,8 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
     let position = 0, showing = true, completed = false, manual = comfortablePace, sequenceTimers = [];
     area.innerHTML = `<p class="game-tip" id="seqTip">Memorize a ordem das cores e formas. Depois repita a sequência.</p>
       <div class="sequence-preview" id="sequencePreview" aria-labelledby="sequencePreviewTitle"><h3 id="sequencePreviewTitle">Sequência para memorizar</h3>
-      <ol>${sequence.map(item => `<li>${colors[item].name}, ${colors[item].shape.toLowerCase()}</li>`).join('')}</ol></div>
+      <ol>${sequence.map((item, index) => `<li class="${colors[item].cls}"><span class="sequence-order" aria-hidden="true">${index + 1}</span><span class="sequence-shape" aria-hidden="true">${colors[item].icon}</span><span>${colors[item].name}, ${colors[item].shape.toLowerCase()}</span></li>`).join('')}</ol></div>
+      <div class="sequence-steps" aria-label="Passos repetidos" hidden>${sequence.map((_, index) => `<span aria-label="Passo ${index + 1}, aguardando">${index + 1}</span>`).join('')}</div>
       <div class="sequence-grid" id="sequenceGrid" role="group" aria-label="Cores e formas para repetir a sequência" aria-describedby="seqTip"></div>
       <p class="game-counter" id="counter">Preparando a sequência...</p>
       <div class="game-controls"><button type="button" class="secondary-button" id="sequencePace"${manual ? ' hidden' : ''}>Ver no meu ritmo</button>
@@ -350,6 +373,8 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
       if (closed || paused || completed || !showing) return;
       const moveFocus = document.activeElement === start;
       cancelPresentation(); showing = false; repeat.disabled = false; preview.hidden = true; start.hidden = true;
+      grid.hidden = false; repeat.hidden = false;
+      area.querySelector('.sequence-steps').hidden = false;
       pads.forEach(pad => { pad.disabled = false; pad.classList.remove('lit'); });
       area.querySelector('#counter').textContent = `Sua vez: 0 de ${length} passos.`;
       area.querySelector('#seqTip').textContent = 'Escolha as cores e formas na mesma ordem. Use toque ou teclado. Você pode rever a sequência.';
@@ -359,8 +384,11 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
       if (closed || paused || completed) return;
       cancelPresentation();
       showing = true; position = 0;
+      area.querySelector('.sequence-steps').hidden = true;
+      area.querySelectorAll('.sequence-steps span').forEach((step, index) => { step.textContent = index + 1; step.classList.remove('done'); step.setAttribute('aria-label', `Passo ${index + 1}, aguardando`); });
       progress(0, length);
       repeat.disabled = true; preview.hidden = false; start.hidden = !manual;
+      grid.hidden = manual; repeat.hidden = true;
       area.querySelector('#seqTip').textContent = manual ? 'Leia a lista na ordem, com calma. Quando terminar, escolha “Estou pronto para repetir”.' : 'Observe a lista e as formas. Para ter mais tempo, escolha “Ver no meu ritmo”.';
       area.querySelector('#counter').textContent = manual ? `${length} passos para memorizar. Comece quando estiver pronto.` : `${length} passos para memorizar. Observe a sequência.`;
       pads.forEach(pad => { pad.disabled = true; pad.classList.remove('lit'); });
@@ -380,6 +408,9 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
         error('A ordem foi diferente. Reveja as cores e formas, depois tente novamente desde o primeiro passo.');
         sequenceTimers.push(later(showSequence, 700)); return;
       }
+      const step = area.querySelectorAll('.sequence-steps span')[position];
+      step.textContent = colors[i].icon; step.classList.add('done');
+      step.setAttribute('aria-label', `Passo ${position + 1}, ${colors[i].name}, correto`);
       position++; playSound(true);
       progress(position, length);
       area.querySelector('#counter').textContent = `Sua vez: ${position} de ${length} passos. Último: ${colors[i].name}, ${colors[i].shape.toLowerCase()}.`;
@@ -407,23 +438,25 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
     const targets = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8]).slice(0, targetCount);
     const found = new Set();
     progress(0, targetCount);
-    area.innerHTML = `<p class="game-tip" id="differencesTip">Compare os objetos na mesma linha e coluna dos jardins A e B. No jardim B, escolha os objetos diferentes. Use toque ou teclado.</p>
-      <div class="scene-pair"><div class="scene"><h3 id="sceneATitle">Jardim A</h3><div class="scene-grid" id="sceneA" role="group" aria-labelledby="sceneATitle"></div></div>
-      <div class="scene"><h3 id="sceneBTitle">Jardim B</h3><div class="scene-grid" id="sceneB" role="group" aria-labelledby="sceneBTitle" aria-describedby="differencesTip"></div></div></div>
+    area.innerHTML = `<p class="game-tip" id="differencesTip">Compare as figuras na mesma posição. No jardim B, toque nas que mudaram.</p>
+      <div class="scene-pair"><div class="scene"><h3 id="sceneATitle">A · Observe</h3><div class="scene-grid" id="sceneA" role="group" aria-label="Jardim A"></div></div>
+      <div class="scene"><h3 id="sceneBTitle">B · Encontre</h3><div class="scene-grid" id="sceneB" role="group" aria-label="Jardim B" aria-describedby="differencesTip"></div></div></div>
       <p class="game-counter" id="counter">0 de ${targetCount} diferenças encontradas</p>`;
     const left = area.querySelector('#sceneA'), right = area.querySelector('#sceneB');
     base.forEach((item, i) => {
       const location = `linha ${Math.floor(i / 3) + 1}, coluna ${i % 3 + 1}`;
       const other = targets.includes(i) ? changed[i] : item;
       const a = document.createElement('span'); a.className = 'scene-item';
+      a.style.setProperty('--comparison-row', i + 2); a.style.setProperty('--comparison-column', 1);
       a.innerHTML = `<span class="scene-symbol" aria-hidden="true">${item.icon}</span><small class="scene-name" aria-hidden="true">${item.name}</small>`;
       a.setAttribute('role', 'img'); a.setAttribute('aria-label', `Jardim A, ${location}: ${item.name}.`); left.appendChild(a);
       const b = document.createElement('button'); b.type = 'button'; b.className = 'scene-item';
+      b.style.setProperty('--comparison-row', i + 2); b.style.setProperty('--comparison-column', 2);
       b.innerHTML = `<span class="scene-symbol" aria-hidden="true">${other.icon}</span><small class="scene-name" aria-hidden="true">${other.name}</small>`;
       b.setAttribute('aria-label', `Jardim B, ${location}: ${other.name}. Selecionar se for diferente.`);
       b.addEventListener('click', () => {
         if (closed || paused || found.size === targetCount || found.has(i)) return;
-        if (!targets.includes(i)) { error(`${item.name} aparece nos dois jardins na ${location}. Compare outro objeto na mesma posição.`); return; }
+        if (!targets.includes(i)) { error(`${item.name} aparece nos dois jardins na ${location}. Compare outra posição.`, b); return; }
         found.add(i); a.classList.add('found'); b.classList.add('found'); b.disabled = true;
         progress(found.size, targetCount);
         a.setAttribute('aria-label', `Jardim A, ${location}: ${item.name}. Diferença encontrada.`);
@@ -446,6 +479,7 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
     progress(round - 1, totalRounds);
     area.innerHTML = `<p class="game-tip" id="oddTip">Observe a grade e toque no único símbolo que não se repete.</p><div class="focus-grid" id="focusGrid" role="group" aria-label="Símbolos para encontrar o diferente"></div><p class="game-counter" id="counter">Encontre o símbolo diferente.</p>`;
     const grid = area.querySelector('#focusGrid');
+    grid.style.setProperty('--focus-columns', tileCount <= 15 ? 3 : 5);
     for (let i = 0; i < tileCount; i++) {
       const item = i === oddIndex ? different : target;
       const button = document.createElement('button');
@@ -453,7 +487,7 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
       button.setAttribute('aria-label', `Símbolo ${i + 1}: ${item.name}. Selecionar se for o diferente.`);
       button.addEventListener('click', () => {
         if (closed || paused || button.disabled) return;
-        if (i !== oddIndex) { error(`${item.name} aparece repetido. Continue procurando o único símbolo diferente.`); return; }
+        if (i !== oddIndex) { error(`${item.name} aparece repetido. Procure o único símbolo diferente.`, button); return; }
         button.classList.add('found');
         grid.querySelectorAll('button').forEach(tile => { tile.disabled = true; });
         area.querySelector('#counter').textContent = `Encontrado: ${different.name}.`;
@@ -473,24 +507,41 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
     const distractorCount = Math.min(18, 8 + Math.floor(Math.max(0, count) / 4));
     const distractors = symbols.filter(item => item !== target);
     const board = shuffle([...Array(targetCount).fill(target), ...Array.from({ length: distractorCount }, () => distractors[Math.floor(Math.random() * distractors.length)])]);
-    const answers = shuffle([targetCount - 1, targetCount, targetCount + 1]);
+    const answers = [targetCount - 1, targetCount, targetCount + 1];
     progress(round - 1, totalRounds);
-    area.innerHTML = `<p class="game-tip" id="countTip">Conte quantas vezes aparece <strong>${target.icon} ${target.name}</strong>. Toque nos objetos para marcar os que já contou, se quiser. Depois escolha a quantidade.</p><div class="count-grid" role="group" aria-label="${board.length} objetos para contar">${board.map((item, i) => `<button type="button" class="count-object" aria-pressed="false" aria-label="Objeto ${i + 1}: ${item.name}">${item.icon}</button>`).join('')}</div><div class="answer-grid" role="group" aria-label="Escolha a quantidade de ${target.name}">${answers.map(answer => `<button type="button" class="secondary-button" data-answer="${answer}">${answer}</button>`).join('')}</div><p class="game-counter" id="counter">Quantas vezes aparece ${target.name}?</p>`;
+    area.innerHTML = `<p class="game-tip count-target" id="countTip">Vamos contar apenas<strong>${target.icon} ${target.name}</strong><span>Toque nos objetos para marcar os que já contou.</span></p><div class="count-grid" role="group" aria-label="${board.length} objetos para contar">${board.map((item, i) => `<button type="button" class="count-object" aria-pressed="false" aria-label="Objeto ${i + 1}: ${item.name}">${item.icon}</button>`).join('')}</div><div class="count-tools"><span>Toque novamente para desmarcar.</span><button type="button" class="text-link" id="clearCount" disabled>Limpar marcações</button></div><p class="answer-label">Qual é a quantidade?</p><div class="answer-grid" role="group" aria-label="Escolha a quantidade de ${target.name}">${answers.map(answer => `<button type="button" class="secondary-button" data-answer="${answer}">${answer}</button>`).join('')}</div><p class="game-counter" id="counter">Quantas vezes aparece ${target.name}?</p>`;
     const marked = new Set();
+    const clear = area.querySelector('#clearCount');
+    function updateMarks() {
+      const order = [...marked];
+      area.querySelectorAll('.count-object').forEach((button, index) => {
+        button.setAttribute('aria-pressed', String(marked.has(index)));
+        if (marked.has(index)) button.dataset.countOrder = order.indexOf(index) + 1;
+        else delete button.dataset.countOrder;
+      });
+      clear.disabled = marked.size === 0;
+      area.querySelector('#counter').textContent = `${marked.size} ${marked.size === 1 ? 'objeto marcado' : 'objetos marcados'}. Escolha a quantidade de ${target.name}.`;
+    }
+    clear.addEventListener('click', () => {
+      if (closed || paused || changingRound) return;
+      marked.clear(); updateMarks();
+      onFeedback('Marcações limpas. Você pode contar novamente com calma.', true);
+    });
     area.querySelectorAll('.count-object').forEach((button, index) => button.addEventListener('click', () => {
       if (closed || paused || button.disabled) return;
       if (marked.has(index)) marked.delete(index); else marked.add(index);
-      button.setAttribute('aria-pressed', String(marked.has(index)));
-      area.querySelector('#counter').textContent = `${marked.size} ${marked.size === 1 ? 'objeto marcado' : 'objetos marcados'}. Escolha a quantidade de ${target.name}.`;
+      updateMarks();
     }));
     area.querySelectorAll('[data-answer]').forEach(button => button.addEventListener('click', () => {
       if (closed || paused || button.disabled) return;
       const answer = Number(button.dataset.answer);
-      if (answer !== targetCount) { error(`Não foram ${answer}. Conte novamente apenas os objetos: ${target.name}.`); return; }
+      if (answer !== targetCount) { error(`Vamos contar de novo apenas ${target.name}. Você pode marcar cada objeto para ajudar.`, button); return; }
+      clear.disabled = true;
       area.querySelectorAll('[data-answer]').forEach(option => { option.disabled = true; });
       button.classList.add('answer-correct');
       area.querySelectorAll('.count-object').forEach((item, index) => {
         item.disabled = true; item.setAttribute('aria-pressed', String(board[index] === target));
+        delete item.dataset.countOrder;
         if (board[index] === target) item.classList.add('count-found');
       });
       area.querySelector('#counter').textContent = `Isso mesmo: ${target.name} aparece ${targetCount} vezes.`;

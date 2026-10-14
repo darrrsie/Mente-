@@ -2,5 +2,5 @@
 Options -Indexes
 RewriteEngine On
 RewriteRule ^$ index.html [END]
-RewriteRule ^(?:index\.html|src/(?:app(?:\.bundle)?\.js|games\.js|tutorials\.js|state\.js|styles\.css)|assets/icon-512\.png)$ - [END]
+RewriteRule ^(?:index\.html|src/(?:app(?:\.bundle)?\.js|games\.js|tutorials\.js|state\.js|styles\.css)|assets/(?:icon-512\.png|map-garden\.svg))$ - [END]
 RewriteRule ^ - [F]

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1200" viewBox="0 0 1440 1200" fill="none">
+  <defs>
+    <linearGradient id="meadow" x1="0" y1="0" x2="1440" y2="0" gradientUnits="userSpaceOnUse"><stop stop-color="#d9e9d4"/><stop offset=".45" stop-color="#f0f4df"/><stop offset=".6" stop-color="#f0f4df"/><stop offset="1" stop-color="#dfedd7"/></linearGradient>
+    <linearGradient id="water" x1="1070" y1="0" x2="1400" y2="0" gradientUnits="userSpaceOnUse"><stop stop-color="#a9d9db"/><stop offset="1" stop-color="#c9e6de"/></linearGradient>
+    <g id="tree"><ellipse cy="35" rx="35" ry="10" fill="#709777" opacity=".15"/><path d="M0 30V-14" stroke="#a48b67" stroke-width="9" stroke-linecap="round"/><path d="M0 12L-15-2M0 3L15-11" stroke="#a48b67" stroke-width="5" stroke-linecap="round"/><path d="M-30-9C-43-27-25-48-12-43C-7-64 23-59 26-38C48-32 41-6 27-2C16 17-18 12-30-9Z" fill="#92b99b"/><path d="M-23-29C-16-46 8-48 19-31" stroke="#bed4ae" stroke-width="7" stroke-linecap="round"/></g>
+    <g id="pine"><ellipse cy="34" rx="29" ry="8" fill="#709777" opacity=".15"/><path d="M0 31V-28" stroke="#a48b67" stroke-width="7" stroke-linecap="round"/><path d="M0-58L-30 15Q0 29 30 15Z" fill="#7fae94"/><path d="M0-58L-17-15Q0-5 17-15Z" fill="#a6c7a4"/></g>
+    <g id="flower"><path d="M0 11V-2M0 7Q-10 0-10 6Q-9 12 0 11" stroke="#93b390" stroke-width="3" stroke-linecap="round"/><path d="M0-7C-12-17-16 1-6 1C-14 11 5 16 4 5C16 10 19-7 8-5C13-17-3-19 0-7Z" fill="#e9bfbc"/><circle cx="2" cy="0" r="4" fill="#fff2c5"/></g>
+    <g id="grass" stroke="#a8c39a" stroke-width="3" stroke-linecap="round"><path d="M0 0L-4-9M5 0L7-13M11 0L16-7"/></g>
+    <g id="stones"><ellipse rx="16" ry="9" fill="#c4d0b9"/><ellipse cx="23" cy="9" rx="10" ry="6" fill="#d3dcc8"/><path d="M-10-3Q-4-7 4-5" stroke="#edf0df" stroke-width="3" stroke-linecap="round"/></g>
+  </defs>
+  <path fill="url(#meadow)" d="M0 0H1440V1200H0Z"/>
+  <path d="M0 0H300C390 130 195 255 240 390S419 626 299 786S243 1075 300 1200H0Z" fill="#cbdcbd" opacity=".55"/>
+  <path d="M0 0H125C245 156 32 295 123 464S255 698 129 860S70 1071 125 1200H0Z" fill="#b9d1b2" opacity=".45"/>
+  <path d="M1440 0H1210C1135 166 1349 244 1273 414S1089 638 1193 813S1261 1043 1210 1200H1440Z" fill="#c5dabb" opacity=".65"/>
+  <path d="M1348-20C1227 134 1438 252 1325 402S1147 628 1287 801S1404 1039 1348 1220" stroke="#e7efda" stroke-width="97"/>
+  <path d="M1348-20C1227 134 1438 252 1325 402S1147 628 1287 801S1404 1039 1348 1220" stroke="url(#water)" stroke-width="75"/>
+  <g stroke="#edf8ec" stroke-width="3" stroke-linecap="round" opacity=".8"><path d="M1310 105h28m-13 11h23M1339 322h25m-17 12h18M1228 552h27m-14 12h19M1291 838h23m-9 12h18M1370 1045h23"/></g>
+  <g stroke="#f6f7e7" stroke-width="2" opacity=".6"><path d="M281 0C369 132 174 265 220 395S398 628 279 787S223 1074 281 1200"/><path d="M45 0C164 155-47 292 43 465S173 696 48 860S-10 1071 45 1200"/><path d="M1130 0C1055 166 1269 244 1193 414S1009 638 1113 813S1181 1043 1130 1200"/></g>
+  <g opacity=".92"><use href="#tree" transform="translate(191 153) scale(1.5)"/><use href="#pine" transform="translate(126 198) scale(1.1)"/><use href="#tree" transform="translate(325 548) scale(1.2)"/><use href="#tree" transform="translate(107 865) scale(1.6)"/><use href="#pine" transform="translate(194 905) scale(1.3)"/><use href="#pine" transform="translate(1130 208) scale(1.4)"/><use href="#tree" transform="translate(1191 259) scale(1.1)"/><use href="#tree" transform="translate(1094 711) scale(1.5)"/><use href="#pine" transform="translate(1156 762)"/><use href="#tree" transform="translate(1190 1080) scale(1.3)"/></g>
+  <g><use href="#flower" x="363" y="282"/><use href="#flower" x="385" y="300" transform="rotate(15 385 300)"/><use href="#flower" x="245" y="687"/><use href="#flower" x="269" y="700"/><use href="#flower" x="340" y="1059"/><use href="#flower" x="1056" y="385"/><use href="#flower" x="1080" y="401"/><use href="#flower" x="1018" y="925"/><use href="#flower" x="1041" y="943"/></g>
+  <g opacity=".7"><use href="#grass" x="291" y="78"/><use href="#grass" x="112" y="386"/><use href="#grass" x="390" y="745"/><use href="#grass" x="248" y="1110"/><use href="#grass" x="1055" y="104"/><use href="#grass" x="1185" y="457"/><use href="#grass" x="1002" y="630"/><use href="#grass" x="1175" y="1000"/><use href="#stones" x="230" y="410"/><use href="#stones" x="156" y="1042"/><use href="#stones" x="1150" y="536"/><use href="#stones" x="1090" y="1146"/></g>
+</svg>

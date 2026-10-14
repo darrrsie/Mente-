@@ -17,7 +17,7 @@ No computador, abra `http://127.0.0.1:8765`. Para jogar no celular, conecte-o à
 
 Depois de alterar o JavaScript em `src/`, execute `npm run build` para atualizar `src/app.bundle.js`. Os comandos `npm run dev` e `npm test` fazem isso automaticamente antes de iniciar.
 
-Para publicar em hospedagem estática ou Apache, execute `npm run build` e envie `index.html`, a pasta `src/` e `assets/icon-512.png`, mantendo os caminhos. Inclua também `.htaccess` no Apache: ele permite somente os arquivos do site e bloqueia o restante do projeto.
+Para publicar em hospedagem estática ou Apache, execute `npm run build` e envie `index.html`, as pastas `src/` e `assets/`, mantendo os caminhos. Inclua também `.htaccess` no Apache: ele permite somente os arquivos do site e bloqueia o restante do projeto.
 
 ## O que há no site
 

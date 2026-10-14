@@ -15,7 +15,8 @@ const files = new Map([
   ['/src/tutorials.js', ['src/tutorials.js', 'text/javascript; charset=utf-8']],
   ['/src/state.js', ['src/state.js', 'text/javascript; charset=utf-8']],
   ['/src/styles.css', ['src/styles.css', 'text/css; charset=utf-8']],
-  ['/assets/icon-512.png', ['assets/icon-512.png', 'image/png']]
+  ['/assets/icon-512.png', ['assets/icon-512.png', 'image/png']],
+  ['/assets/map-garden.svg', ['assets/map-garden.svg', 'image/svg+xml']]
 ]);
 
 export function createWebServer(directory = root) {

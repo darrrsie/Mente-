@@ -100,6 +100,7 @@ function updateShell() {
     if (active) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
   });
   document.body.classList.toggle('in-game', ['play', 'result'].includes(route.page));
+  document.body.classList.toggle('playing-screen', route.page === 'play');
   document.body.classList.toggle('map-screen', route.page === 'map' && !listMap());
   document.body.classList.toggle('onboarding-screen', route.page === 'welcome');
 }
@@ -134,9 +135,9 @@ function renderHome() {
   view.innerHTML = `<section class="hero">
     <div class="hero-top"><span class="eyebrow">SEU CANTINHO DE JOGAR</span><span class="hero-spark">✦</span></div>
     <div class="hero-illustration" aria-hidden="true"><span class="hero-orbit"></span><span class="hero-main">🧠</span><span class="hero-bubble one">🌼</span><span class="hero-bubble two">🦋</span><span class="hero-bubble three">✦</span></div>
-    <h1>Olá, ${escapeHtml(state.name)}! <span class="wave">👋</span></h1>
+    <div class="hero-copy"><h1>Olá, ${escapeHtml(state.name)}! <span class="wave">👋</span></h1>
     <p>Vamos movimentar a mente hoje?</p>
-    <button type="button" class="primary-button hero-button" data-action="play" data-id="${current.id}">Começar exercício <span aria-hidden="true">→</span></button>
+    <button type="button" class="primary-button hero-button" data-action="play" data-id="${current.id}">Começar exercício <span aria-hidden="true">→</span></button></div>
   </section>
   <section class="today-card"><div class="section-heading"><div><span class="eyebrow">UM POUQUINHO POR DIA</span><h2>Seu treino de hoje</h2></div><span class="day-icon" aria-hidden="true">☀️</span></div>
     <div class="today-progress"><span>${today} de 3 atividades</span><strong>${today === 3 ? 'Concluído!' : 'No seu ritmo'}</strong></div>
@@ -179,22 +180,23 @@ function renderMap() {
     }).join('')}</ol></section>`;
     return;
   }
-  const height = visibleCount * 190 + 240;
+  const height = (visibleCount - 1) * 220 + 340;
   const spread = seed => {
     const value = Math.sin(seed * 127.1 + 311.7) * 43758.5453123;
     return value - Math.floor(value);
   };
   const points = stages.map(level => ({
-    x: Math.round(90 + spread(level.number) * 180),
-    y: Math.round(170 + (level.number - pageStart) * 190 + (spread(level.number + 271) - 0.5) * 48)
+    x: Math.round(105 + spread(level.number) * 150),
+    y: 130 + (level.number - pageStart) * 220
   }));
   const route = points.slice(1).reduce((path, point, index) => {
     const previous = points[index], middle = Math.round((previous.y + point.y) / 2);
     return `${path} C${previous.x} ${middle},${point.x} ${middle},${point.x} ${point.y}`;
   }, `M${points[0].x} ${points[0].y}`);
   const earned = Object.values(state.stageRecords).reduce((sum, record) => sum + record.stars, 0);
-  view.innerHTML = `${toolbar}${pageControls}<section class="map-world" style="--map-height:${height}px" aria-label="Mapa de fases">
+  view.innerHTML = `${toolbar}${pageControls}<section class="map-region" aria-label="Mapa de fases">
     <div class="map-title"><div><span>SEU CAMINHO</span><h1>Jornada sem fim</h1><p>Sete jogos em ciclos cada vez mais desafiadores</p></div><strong aria-label="${earned} estrelas conquistadas">★ ${earned}</strong></div>
+    <div class="map-world" style="--map-height:${height}px"><div class="map-canvas">
     <svg class="map-route" viewBox="0 0 360 ${height}" preserveAspectRatio="none" aria-hidden="true"><path class="map-route-edge" d="${route}"/><path class="map-route-center" d="${route}"/><path class="map-route-dashes" d="${route}"/></svg>
     ${stages.map((level, index) => {
       const { x, y } = points[index], open = canPlay(level.number);
@@ -208,6 +210,7 @@ function renderMap() {
       </div>`;
     }).join('')}
     <div class="map-start" aria-hidden="true">✦ MAIS DESAFIOS</div>
+    </div></div>
   </section>`;
 }
 function renderProfile() {
@@ -244,10 +247,9 @@ function renderPreferences() {
 }
 function renderPlay(id) {
   const level = getLevel(id); if (!level || !canPlay(id)) return navigate('map');
-  view.innerHTML = `<div class="play-top"><button type="button" class="back-button" data-action="map">← Mapa</button><span>FASE ${level.number} · CICLO ${level.cycle}</span></div>
+  view.innerHTML = `<section class="play-session"><div class="play-top"><button type="button" class="back-button" data-action="map">← Mapa</button><span>FASE ${level.number} · CICLO ${level.cycle}</span></div>
     <div class="play-heading"><div class="play-icon ${level.color}" aria-hidden="true">${level.icon}</div><div><span class="eyebrow">${level.skill.toUpperCase()}</span><h1>${level.name}</h1></div></div>
-    <div class="instruction-banner"><span aria-hidden="true">👉</span><strong>${level.objective}</strong></div>
-    <p class="feedback" id="feedback" role="status" aria-live="polite" aria-atomic="true">Você consegue. Vá no seu ritmo!</p><div class="game-controls"><button type="button" class="secondary-button pause-button" data-action="pause" aria-pressed="false">Pausar partida</button><button type="button" class="secondary-button" data-action="help">Ver tutorial</button></div><p id="pauseNotice" class="instruction-banner" role="status" hidden>Partida pausada. Selecione Retomar partida para continuar do mesmo ponto.</p><div id="gameMount"></div>`;
+    <div class="game-controls play-tools"><button type="button" class="secondary-button pause-button" data-action="pause" aria-pressed="false">Pausar partida</button><button type="button" class="secondary-button" data-action="help">Ver tutorial</button></div><p id="pauseNotice" class="instruction-banner" role="status" hidden>Partida pausada. Selecione Retomar partida para continuar do mesmo ponto.</p><div class="play-board"><div id="gameMount"></div><p class="feedback" id="feedback" role="status" aria-live="polite" aria-atomic="true">Vá com calma. Cada tentativa conta.</p></div></section>`;
   cleanup = startGame({
     id: level.gameId, mount: view.querySelector('#gameMount'), support: getState().levels[level.gameId].support, difficulty: level.difficulty, settings: { ...getState().settings },
     playSound: sound,

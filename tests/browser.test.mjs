@@ -22,6 +22,7 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
     ['/src/app.bundle.js', ['src/app.bundle.js', 'text/javascript']],
     ['/src/state.js', ['src/state.js', 'text/javascript']], ['/src/games.js', ['src/games.js', 'text/javascript']],
     ['/src/styles.css', ['src/styles.css', 'text/css']], ['/assets/icon-512.png', ['assets/icon-512.png', 'image/png']],
+    ['/assets/map-garden.svg', ['assets/map-garden.svg', 'image/svg+xml']],
     ['/test-games.js', ['src/games.js', 'text/javascript']],
     ['/test-tutorials.js', ['src/tutorials.js', 'text/javascript']]
   ]);
@@ -526,6 +527,42 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
           return checked;
         })()`);
         assert.equal(checked, 56);
+      });
+
+      await accessibilityTest.test('marcações podem ser refeitas sem erro e a sequência limpa seus passos ao rever', async () => {
+        const result = await evaluate(`(() => {
+          const game = window.__gameTest, mount = game.mount;
+          game.start('counting');
+          const objects = [...mount.querySelectorAll('.count-object')], clear = mount.querySelector('#clearCount');
+          const check = (value, message) => { if (!value) throw Error(message); };
+          check(clear.disabled, 'Limpar começa desativado');
+          objects[0].click(); objects[1].click(); objects[2].click();
+          check(objects[2].dataset.countOrder === '3', 'Marcações numeradas em ordem');
+          objects[1].click();
+          check(objects[2].dataset.countOrder === '2', 'Desmarcar reorganiza a numeração');
+          game.pause(true); clear.click();
+          check(mount.querySelectorAll('[data-count-order]').length === 2, 'Pausa preserva marcações');
+          game.pause(false); clear.click();
+          check(clear.disabled && !mount.querySelector('[data-count-order]'), 'Limpar remove todas as marcações');
+          check(objects.every(item => item.getAttribute('aria-pressed') === 'false'), 'Estado acessível atualizado');
+          for (let round = 1; round <= 3; round++) {
+            const name = mount.querySelector('#countTip strong').textContent.split(' ').slice(1).join(' ');
+            const quantity = [...mount.querySelectorAll('.count-object')].filter(item => item.getAttribute('aria-label').endsWith(': ' + name)).length;
+            [...mount.querySelectorAll('[data-answer]')].find(button => Number(button.dataset.answer) === quantity).click();
+            if (round < 3) mount.querySelector('.next-round').click();
+          }
+          game.tick(1000);
+          check(game.outcomes.length === 1 && game.outcomes[0].mistakes === 0, 'Marcar e limpar não contam como erros');
+          game.start('sequence');
+          mount.querySelector('#sequenceStart').click(); mount.querySelector('.sequence-pad').click();
+          check(mount.querySelectorAll('.sequence-steps .done').length === 1, 'Passo correto fica marcado');
+          mount.querySelector('#repeatSequence').click();
+          check(mount.querySelector('.sequence-steps').hidden && !mount.querySelector('.sequence-steps .done'), 'Rever limpa os passos anteriores');
+          mount.querySelector('#sequenceStart').click();
+          check(!mount.querySelector('.sequence-steps').hidden && mount.querySelector('.sequence-steps span').textContent === '1', 'Recomeço mostra os passos vazios');
+          return true;
+        })()`);
+        assert.equal(result, true);
       });
 
       await accessibilityTest.test('sair entre rodadas cancela a transição automática', async () => {
