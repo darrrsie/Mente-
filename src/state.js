@@ -1,11 +1,11 @@
 export const LEVELS = [
-  { id: 'sort', number: 1, name: 'Organize a Feira', short: 'Arraste objetos', icon: '🍎', skill: 'Coordenação', skills: ['coordination', 'visual'], color: 'coral', intro: 'Hoje vamos treinar sua coordenação!', steps: ['Escolha uma fruta.', 'Leve até a cesta igual.', 'Você também pode tocar na fruta e na cesta.'], objective: 'Coloque cada fruta na cesta correta.' },
-  { id: 'pairs', number: 2, name: 'Pares do Jardim', short: 'Encontre pares', icon: '🌼', skill: 'Memória', skills: ['memory', 'attention'], color: 'yellow', intro: 'Hoje vamos treinar sua memória!', steps: ['Observe as cartas.', 'Toque em duas de cada vez.', 'Encontre as figuras iguais.'], objective: 'Encontre todos os pares.' },
-  { id: 'path', number: 3, name: 'Trilha da Borboleta', short: 'Siga uma linha', icon: '🦋', skill: 'Coordenação', skills: ['coordination', 'visual'], color: 'blue', intro: 'Hoje vamos treinar a precisão!', steps: ['Comece na flor.', 'Siga o caminho com o dedo ou escolha avançar com toques.', 'Chegue até a borboleta.'], objective: 'Siga a trilha do início ao fim.' },
-  { id: 'sequence', number: 4, name: 'Cores em Festa', short: 'Memorize a sequência', icon: '🎨', skill: 'Memória', skills: ['memory', 'reasoning'], color: 'purple', intro: 'Hoje vamos treinar sua atenção!', steps: ['Leia ou observe a sequência de cores e formas.', 'Depois, repita desde o primeiro símbolo.', 'Selecione os botões na mesma ordem.'], objective: 'Repita a sequência de cores e formas.' },
-  { id: 'differences', number: 5, name: 'Dois Jardins', short: 'Encontre diferenças', icon: '👀', skill: 'Atenção', skills: ['attention', 'visual'], color: 'green', intro: 'Hoje vamos observar os detalhes!', steps: ['Veja os dois jardins.', 'Procure o que mudou.', 'Toque no detalhe diferente.'], objective: 'Encontre as diferenças entre os jardins.' },
-  { id: 'oddone', number: 6, name: 'Intruso no Jardim', short: 'Encontre o diferente', icon: '🔎', skill: 'Atenção', skills: ['attention', 'visual'], color: 'coral', intro: 'Hoje vamos procurar um detalhe que não combina!', steps: ['Observe todos os símbolos.', 'Compare um por um.', 'Toque no diferente em cada uma das três rodadas.'], objective: 'Encontre o símbolo diferente nas três rodadas.' },
-  { id: 'counting', number: 7, name: 'Contagem da Colheita', short: 'Conte os objetos', icon: '🧺', skill: 'Raciocínio', skills: ['reasoning', 'attention'], color: 'yellow', intro: 'Hoje vamos contar com atenção!', steps: ['Observe os objetos espalhados.', 'Conte apenas o símbolo indicado.', 'Escolha a quantidade correta nas três rodadas.'], objective: 'Conte os objetos pedidos nas três rodadas.' }
+  { id: 'sort', number: 1, name: 'Organize a Feira', short: 'Arraste objetos', icon: '🍎', skill: 'Coordenação', skills: ['coordination', 'visual'], color: 'coral', intro: 'Hoje vamos treinar sua coordenação!', steps: ['Escolha uma fruta.', 'Leve até a cesta igual.', 'Você também pode tocar na fruta e na cesta.'], objective: 'Leve cada fruta à cesta certa.' },
+  { id: 'pairs', number: 2, name: 'Pares do Jardim', short: 'Encontre pares', icon: '🌼', skill: 'Memória', skills: ['memory', 'attention'], color: 'yellow', intro: 'Hoje vamos treinar sua memória!', steps: ['Observe as cartas.', 'Toque em duas de cada vez.', 'Encontre as figuras iguais.'], objective: 'Encontre as figuras iguais.' },
+  { id: 'path', number: 3, name: 'Trilha da Borboleta', short: 'Siga uma linha', icon: '🦋', skill: 'Coordenação', skills: ['coordination', 'visual'], color: 'blue', intro: 'Hoje vamos treinar a precisão!', steps: ['Comece na flor.', 'Siga o caminho com o dedo ou escolha avançar com toques.', 'Chegue até a borboleta.'], objective: 'Siga o caminho até a borboleta.' },
+  { id: 'sequence', number: 4, name: 'Cores em Festa', short: 'Memorize a sequência', icon: '🎨', skill: 'Memória', skills: ['memory', 'reasoning'], color: 'purple', intro: 'Hoje vamos treinar sua atenção!', steps: ['Leia ou observe a sequência de cores e formas.', 'Depois, repita desde o primeiro símbolo.', 'Selecione os botões na mesma ordem.'], objective: 'Repita a sequência.' },
+  { id: 'differences', number: 5, name: 'Dois Jardins', short: 'Encontre diferenças', icon: '👀', skill: 'Atenção', skills: ['attention', 'visual'], color: 'green', intro: 'Hoje vamos observar os detalhes!', steps: ['Veja os dois jardins.', 'Procure o que mudou.', 'Toque no detalhe diferente.'], objective: 'Encontre o que mudou nos jardins.' },
+  { id: 'oddone', number: 6, name: 'Intruso no Jardim', short: 'Encontre o diferente', icon: '🔎', skill: 'Atenção', skills: ['attention', 'visual'], color: 'coral', intro: 'Hoje vamos procurar um detalhe que não combina!', steps: ['Observe todos os símbolos.', 'Compare um por um.', 'Toque no diferente em cada uma das três rodadas.'], objective: 'Toque no símbolo diferente.' },
+  { id: 'counting', number: 7, name: 'Contagem da Colheita', short: 'Conte os objetos', icon: '🧺', skill: 'Raciocínio', skills: ['reasoning', 'attention'], color: 'yellow', intro: 'Hoje vamos contar com atenção!', steps: ['Observe os objetos espalhados.', 'Conte apenas o símbolo indicado.', 'Escolha a quantidade correta nas três rodadas.'], objective: 'Conte os objetos indicados.' }
 ];
 export const SKILLS = {
   memory: { name: 'Memória', icon: '🧠', color: '#a77ce1' },
@@ -24,7 +24,7 @@ export const getStorageStatus = () => storageStatus;
 const day = offset => { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const blank = () => ({
   name: '', onboardingComplete: false, xp: 0, minutes: 0, plays: 0, streak: 0, lastDay: '', unlocked: 1, stageRecords: {},
-  settings: { largeText: false, sound: true, highContrast: false, reducedMotion: false, comfortablePace: true, mapList: false, hudSize: 'normal' },
+  settings: { largeText: false, sound: true, highContrast: false, reducedMotion: false, comfortablePace: true, mapList: false, voiceGuidance: false, colorblindMode: false, hudSize: 'normal' },
   levels: Object.fromEntries(LEVELS.map(level => [level.id, { stars: 0, bestScore: 0, plays: 0, support: 0 }])),
   history: [], skills: Object.fromEntries(Object.keys(SKILLS).map(id => [id, { total: 0, count: 0 }]))
 });
@@ -40,7 +40,7 @@ function load() {
     fresh.lastDay = /^\d{4}-\d{2}-\d{2}$/.test(saved.lastDay || '') ? saved.lastDay : '';
     fresh.unlocked = Math.max(1, Math.min(MAX_LEVEL, bounded(saved.unlocked, 1, MAX_LEVEL)));
     for (const key of Object.keys(fresh.settings)) {
-      if (typeof saved.settings?.[key] === 'boolean') fresh.settings[key] = saved.settings[key];
+      if (typeof fresh.settings[key] === 'boolean' && typeof saved.settings?.[key] === 'boolean') fresh.settings[key] = saved.settings[key];
     }
     if (['compact', 'normal', 'large'].includes(saved.settings?.hudSize)) fresh.settings.hudSize = saved.settings.hudSize;
     for (const level of LEVELS) {
@@ -130,7 +130,7 @@ export function completeOnboarding({ name, hudSize, comfortablePace, sound, larg
   if (!normalizedName) return false;
   state.name = normalizedName;
   if (['compact', 'normal', 'large'].includes(hudSize)) state.settings.hudSize = hudSize;
-  for (const [key, value] of Object.entries({ comfortablePace, sound, largeText })) {
+  for (const [key, value] of Object.entries({ comfortablePace, sound, largeText, voiceGuidance })) {
     if (typeof value === 'boolean') state.settings[key] = value;
   }
   state.onboardingComplete = true;
@@ -139,7 +139,8 @@ export function completeOnboarding({ name, hudSize, comfortablePace, sound, larg
 }
 export function updateSetting(key, value) {
   if (!Object.prototype.hasOwnProperty.call(state.settings, key)) return false;
-  if (key === 'hudSize' ? !['compact', 'normal', 'large'].includes(value) : typeof value !== 'boolean') return false;
+  const choices = { hudSize: ['compact', 'normal', 'large'] };
+  if (choices[key] ? !choices[key].includes(value) : typeof value !== 'boolean') return false;
   state.settings[key] = value; save(); return true;
 }
 export function resetProgress() {

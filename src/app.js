@@ -5,11 +5,12 @@ import { renderTutorial } from './tutorials.js';
 const view = document.querySelector('#view');
 const toast = document.querySelector('#toast');
 const dialog = document.querySelector('#appDialog');
-let route = { page: getState().onboardingComplete ? 'home' : 'welcome' }, cleanup = null, noticeTimer = null, audioContext = null, mapPage = 0;
+let route = { page: getState().onboardingComplete ? 'home' : 'welcome' }, cleanup = null, noticeTimer = null, audioContext = null, mapPage = 0, mapScrollY = 0, mapReturnLevelId = null;
 let dialogTask = null, manualPaused = false, backgroundPaused = false, preferencesReturn = { page: 'home' };
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const stars = count => `<span class="stars" role="img" aria-label="${count} de 3 estrelas">${'★'.repeat(count)}<span aria-hidden="true">${'★'.repeat(3 - count)}</span></span>`;
 const levelRank = () => Math.floor(getState().xp / 200) + 1;
+const stageColorNames = { coral: 'Laranja', yellow: 'Amarelo', blue: 'Azul', purple: 'Roxo', green: 'Verde' };
 function sound(ok) {
   if (!getState().settings.sound) return;
   try {
@@ -23,6 +24,37 @@ function sound(ok) {
     oscillator.start(); oscillator.stop(audioContext.currentTime + .13);
   } catch { /* Audio is optional. */ }
 }
+let lastSpokenText = '', lastSpokenAt = 0;
+function speakText(value) {
+  if (!getState().settings.voiceGuidance || !('speechSynthesis' in window) || typeof window.SpeechSynthesisUtterance !== 'function') return;
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!text) return;
+  const now = Date.now();
+  if (text === lastSpokenText && now - lastSpokenAt < 900) return;
+  lastSpokenText = text; lastSpokenAt = now;
+  window.speechSynthesis.cancel();
+  const utterance = new window.SpeechSynthesisUtterance(text);
+  utterance.lang = 'pt-BR'; utterance.rate = 0.95;
+  window.speechSynthesis.speak(utterance);
+}
+function speakControl(control) {
+  if (!control) return;
+  const label = control.getAttribute('aria-label')
+    || (control.getAttribute('aria-labelledby') && document.getElementById(control.getAttribute('aria-labelledby'))?.textContent)
+    || [...(control.labels || [])].map(item => item.textContent).join('. ')
+    || control.textContent;
+  speakText(label);
+}
+function speakInstructions() {
+  const heading = view.querySelector('h1')?.textContent;
+  const instructions = view.querySelector('.game-tip, .welcome-card > p')?.textContent;
+  const prompt = view.querySelector('.sequence-preview, .count-target')?.textContent;
+  speakText([heading, instructions, prompt].filter(Boolean).join('. '));
+}
+document.addEventListener('focusin', event => {
+  speakControl(event.target.closest('button, input, select, textarea'));
+});
+document.addEventListener('click', event => speakControl(event.target.closest('button')), true);
 function notify(message) {
   toast.textContent = message; toast.classList.add('show');
   clearTimeout(noticeTimer); noticeTimer = setTimeout(() => toast.classList.remove('show'), 6000);
@@ -49,6 +81,7 @@ function showDialog({ kind, title, description, confirmLabel, onConfirm, restore
   dialog.showModal(); syncPause();
   if (kind === 'name') { document.querySelector('#dialogName').focus(); document.querySelector('#dialogName').select(); }
   else document.querySelector(`[data-dialog="${kind === 'help' ? 'confirm' : 'cancel'}"]`).focus();
+  if (kind === 'help') speakText([title, description, guide.textContent, confirmLabel].join('. '));
 }
 document.querySelector('[data-dialog="cancel"]').addEventListener('click', () => dialog.close('cancel'));
 document.querySelector('#dialogForm').addEventListener('submit', event => {
@@ -87,6 +120,7 @@ function updateShell() {
     : 'Não foi possível salvar neste aparelho. Você pode continuar jogando, mas o progresso poderá ser perdido ao fechar. Confira o espaço disponível e a permissão de armazenamento do navegador.';
   document.documentElement.classList.toggle('large-text', state.settings.largeText);
   document.documentElement.classList.toggle('high-contrast', state.settings.highContrast);
+  document.documentElement.classList.toggle('colorblind-mode', state.settings.colorblindMode);
   document.documentElement.classList.toggle('reduced-motion', state.settings.reducedMotion);
   document.documentElement.dataset.hudSize = state.settings.hudSize || 'normal';
   document.querySelector('#xpChip').textContent = `✦ ${state.xp} XP`;
@@ -113,11 +147,18 @@ function navigate(page, id, confirmed = false) {
     showDialog({ kind: 'exit', title: 'Sair desta partida?', description: 'O avanço desta partida será perdido. As etapas concluídas continuarão salvas.', confirmLabel: 'Sair da partida', onConfirm: () => navigate(page, id, true) });
     return;
   }
-  if (page === 'preferences' && route.page !== 'preferences') preferencesReturn = ['home', 'map', 'profile'].includes(route.page) ? { ...route } : { page: 'map' };
+  if (page === 'preferences' && route.page !== 'preferences') preferencesReturn = ['home', 'map', 'profile'].includes(route.page) ? { ...route, scrollY: window.scrollY } : { page: 'map', scrollY: 0 };
+  const returningToMap = page === 'map' && ['play', 'result'].includes(route.page);
+  const returningFromPreferences = route.page === 'preferences' && page === preferencesReturn.page;
   cleanup?.(); cleanup = null;
   manualPaused = false;
   route = { page, id }; render();
-  window.scrollTo(0, 0); focusHeading();
+  if (returningToMap) {
+    window.scrollTo(0, mapScrollY);
+    const returnButton = mapReturnLevelId && view.querySelector(`[data-action="play"][data-id="${mapReturnLevelId}"]`);
+    if (returnButton) returnButton.focus({ preventScroll: true }); else focusHeading();
+  } else if (returningFromPreferences) { window.scrollTo(0, preferencesReturn.scrollY || 0); focusHeading(); }
+  else { window.scrollTo(0, 0); focusHeading(); }
 }
 window.jardimBack = () => {
   if (dialog.open) { dialog.close('cancel'); return true; }
@@ -132,7 +173,7 @@ document.addEventListener('visibilitychange', () => window.jardimPause(document.
 
 function renderHome() {
   const state = getState(), current = nextLevel(), today = Math.min(getTodayPlays(), 3);
-  view.innerHTML = `<section class="hero">
+  view.innerHTML = `<div class="home-layout"><section class="hero">
     <div class="hero-top"><span class="eyebrow">SEU CANTINHO DE JOGAR</span><span class="hero-spark">✦</span></div>
     <div class="hero-illustration" aria-hidden="true"><span class="hero-orbit"></span><span class="hero-main">🧠</span><span class="hero-bubble one">🌼</span><span class="hero-bubble two">🦋</span><span class="hero-bubble three">✦</span></div>
     <div class="hero-copy"><h1>Olá, ${escapeHtml(state.name)}! <span class="wave">👋</span></h1>
@@ -145,9 +186,9 @@ function renderHome() {
     <div class="skill-pills"><span>🧠 Memória</span><span>🎯 Coordenação</span><span>👁️ Atenção</span></div>
   </section>
   <section class="home-stats"><div><span>🔥</span><strong>${getStreak()}</strong><small>${getStreak() === 1 ? 'dia seguido' : 'dias seguidos'}</small></div><div><span>⭐</span><strong>${Object.values(state.stageRecords).reduce((sum, record) => sum + record.stars, 0)}</strong><small>estrelas</small></div><div><span>✦</span><strong>${state.xp}</strong><small>pontos XP</small></div></section>
-  <div class="section-heading below"><div><span class="eyebrow">PRÓXIMA AVENTURA</span><h2>Continue sua jornada</h2></div><button type="button" class="text-link" data-action="map">Ver mapa →</button></div>
+  <section class="home-journey"><div class="section-heading below"><div><span class="eyebrow">PRÓXIMA AVENTURA</span><h2>Continue sua jornada</h2></div><button type="button" class="text-link" data-action="map">Ver mapa →</button></div>
   <button type="button" class="next-card ${current.color}" data-action="play" data-id="${current.id}"><span class="next-icon">${current.icon}</span><span><small>ETAPA ${String(current.number).padStart(2, '0')} • ${current.skill.toUpperCase()}</small><strong>${current.name}</strong><em>${current.objective}</em></span><b aria-hidden="true">→</b></button>
-  <p class="soft-note">Cada tentativa conta. Divirta-se no seu tempo! 💛</p>`;
+  </section><p class="soft-note">Cada tentativa conta. Divirta-se no seu tempo! 💛</p></div>`;
 }
 function renderWelcome() {
   const settings = getState().settings;
@@ -159,6 +200,7 @@ function renderWelcome() {
       <label class="welcome-check" for="welcomePace"><span><strong>Quero jogar no meu ritmo</strong><small>Sem pressa para observar as cartas e sequências.</small></span><input id="welcomePace" name="comfortablePace" type="checkbox" ${settings.comfortablePace ? 'checked' : ''}></label>
       <label class="welcome-check" for="welcomeText"><span><strong>Texto maior</strong><small>Facilita a leitura e mostra as fases em lista.</small></span><input id="welcomeText" name="largeText" type="checkbox" ${settings.largeText ? 'checked' : ''}></label>
       <label class="welcome-check" for="welcomeSound"><span><strong>Sons suaves</strong><small>Ativa respostas sonoras durante os jogos.</small></span><input id="welcomeSound" name="sound" type="checkbox" ${settings.sound ? 'checked' : ''}></label>
+      <label class="welcome-check" for="welcomeVoice"><span><strong>Leitura em voz alta</strong><small>Lê as instruções e os nomes dos controles. O texto continua visível.</small></span><input id="welcomeVoice" name="voiceGuidance" type="checkbox" ${settings.voiceGuidance ? 'checked' : ''}></label>
       <div class="welcome-actions"><button type="submit" class="primary-button">Começar</button></div>
     </form></section>`;
 }
@@ -176,7 +218,9 @@ function renderMap() {
     view.innerHTML = `${toolbar}${pageControls}<section class="level-list"><h1>Uma jornada que continua</h1><p>Os sete jogos voltam em novos ciclos. Cada ciclo exige um pouco mais de foco.</p><ol class="level-list-items">${stages.map(level => {
       const open = canPlay(level.number), record = state.stageRecords[level.number];
       const status = open ? record ? `${record.stars} de 3 estrelas. Jogar novamente.` : 'Disponível para jogar.' : `Conclua a fase ${level.number - 1} para liberar.`;
-      return `<li class="level-list-item"><button type="button" class="level-list-button" data-action="play" data-id="${level.number}" aria-disabled="${!open}" aria-label="Fase ${level.number}, ciclo ${level.cycle}: ${level.name}. ${level.objective} ${status}"><span class="level-list-icon" aria-hidden="true">${level.icon}</span><span class="level-list-description"><small>FASE ${level.number} · CICLO ${level.cycle} · ${level.skill}</small><strong>${level.name}</strong><span>${level.objective}</span><span class="level-list-status">${status}</span></span></button></li>`;
+      const colorName = stageColorNames[level.color];
+      const colorLabel = state.settings.colorblindMode ? ` Cor de destaque: ${colorName}.` : '';
+      return `<li class="level-list-item"><button type="button" class="level-list-button" data-action="play" data-id="${level.number}" aria-disabled="${!open}" aria-label="Fase ${level.number}, ciclo ${level.cycle}: ${level.name}. ${level.objective}${colorLabel} ${status}"><span class="level-list-icon" aria-hidden="true">${level.icon}</span><span class="level-list-description"><small>FASE ${level.number} · CICLO ${level.cycle} · ${level.skill}</small><strong>${level.name}</strong><span>${level.objective}</span><span class="colorblind-cue" aria-hidden="true">Cor de destaque: ${colorName}</span><span class="level-list-status">${status}</span></span></button></li>`;
     }).join('')}</ol></section>`;
     return;
   }
@@ -201,17 +245,24 @@ function renderMap() {
     ${stages.map((level, index) => {
       const { x, y } = points[index], open = canPlay(level.number);
       const record = state.stageRecords[level.number], active = level.number === state.unlocked;
+      const colorName = stageColorNames[level.color];
       return `<div class="map-stage ${level.color} ${open ? 'available' : 'locked'} ${record ? 'complete' : ''} ${active ? 'current' : ''}" style="--stage-x:${x / 360 * 100}%;--stage-y:${y}px">
         <button type="button" class="map-node" data-action="play" data-id="${level.number}" aria-disabled="${!open}" aria-label="Fase ${level.number}, ciclo ${level.cycle}: ${level.name}. ${open ? record ? `${record.stars} estrelas. Jogar novamente.` : 'Disponível para jogar.' : `Bloqueada. Conclua a fase ${level.number - 1}.`}">
           <span class="map-node-number">${String(level.number).padStart(2, '0')}</span><span class="map-node-icon" aria-hidden="true">${open ? level.icon : '🔒'}</span>
         </button>
-        <div class="map-stage-label"><strong>Fase ${level.number} · ${level.name}</strong><small>Ciclo ${level.cycle} · ${open ? level.skill : 'Bloqueada'}</small></div>
+        <div class="map-stage-label"><strong>${level.name}</strong><small>${open ? level.skill : 'Bloqueada'}</small><span class="colorblind-cue" aria-hidden="true">Cor: ${colorName}</span></div>
         ${record ? `<span class="map-earned" aria-label="${record.stars} de 3 estrelas">${'★'.repeat(record.stars)}${'☆'.repeat(3 - record.stars)}</span>` : active ? '<span class="map-play-hint">JOGAR AGORA</span>' : ''}
       </div>`;
     }).join('')}
     <div class="map-start" aria-hidden="true">✦ MAIS DESAFIOS</div>
     </div></div>
   </section>`;
+  if (state.settings.colorblindMode && !inList) {
+    view.querySelectorAll('.map-stage').forEach(stage => {
+      const button = stage.querySelector('.map-node'), colorCue = stage.querySelector('.colorblind-cue')?.textContent;
+      if (button && colorCue) button.setAttribute('aria-label', `${button.getAttribute('aria-label')} Cor de destaque: ${colorCue.replace(/^Cor:\s*/, '')}.`);
+    });
+  }
 }
 function renderProfile() {
   const state = getState(), days = getWeeklyDays(), weeklyMax = Math.max(3, ...days.map(d => d.count));
@@ -220,30 +271,37 @@ function renderProfile() {
     { icon: '⭐', label: 'Colecionador', earned: Object.values(state.stageRecords).reduce((sum, item) => sum + item.stars, 0) >= 5, goal: 'Conquiste 5 estrelas' },
     { icon: '🔥', label: '3 dias de jogo', earned: getStreak() >= 3, goal: 'Jogue por 3 dias seguidos' }
   ];
-  view.innerHTML = `<section class="profile-hero"><div class="avatar" aria-hidden="true">${escapeHtml(state.name.charAt(0).toUpperCase())}</div><div><span class="eyebrow">SEU PERFIL</span><h1>${escapeHtml(state.name)}</h1><p>Nível ${levelRank()} · ${state.xp} XP</p></div><button type="button" class="icon-button" data-action="edit-name" aria-label="Editar nome">✎</button></section>
+  view.innerHTML = `<div class="profile-layout"><section class="profile-hero"><div class="avatar" aria-hidden="true">${escapeHtml(state.name.charAt(0).toUpperCase())}</div><div><span class="eyebrow">SEU PERFIL</span><h1>${escapeHtml(state.name)}</h1><p>Nível ${levelRank()} · ${state.xp} XP</p></div><button type="button" class="icon-button" data-action="edit-name" aria-label="Editar nome">✎</button></section>
     <div class="profile-stats"><div><strong>${state.plays}</strong><span>partidas concluídas</span></div><div><strong>${state.minutes}</strong><span>minutos aproximados</span></div><div><strong>${getPracticedDays()}</strong><span>dias no histórico</span></div><div><strong>${getStreak()}</strong><span>dias seguidos</span></div></div>
     <section class="panel"><div class="section-heading"><div><span class="eyebrow">PASSO A PASSO</span><h2>Sua semana</h2></div><span aria-hidden="true">📅</span></div><div class="week-chart" role="list" aria-label="Atividades dos últimos sete dias">${days.map(d => `<div role="listitem" aria-label="${d.label}, ${d.date}: ${d.count} atividades concluídas"><div class="week-bar" aria-hidden="true"><span style="height:${Math.max(8, d.count / weeklyMax * 100)}%" class="${d.count ? 'played' : ''}"></span></div><small aria-hidden="true">${d.label}</small><b aria-hidden="true">${d.count}</b></div>`).join('')}</div><p class="fine-print">Cada barra mostra atividades concluídas no site.</p></section>
     <section class="panel"><span class="eyebrow">SUAS CONQUISTAS</span><h2>Medalhas</h2><div class="medal-list">${medals.map(medal => `<div class="${medal.earned ? '' : 'pending'}"><span aria-hidden="true">${medal.icon}</span><strong>${medal.label}</strong><small>${medal.earned ? 'Conquistada' : medal.goal}</small></div>`).join('')}</div></section>
     <section class="panel"><span class="eyebrow">NO SEU RITMO</span><h2>Habilidades jogadas</h2><div class="skill-bars">${Object.entries(SKILLS).map(([id, skill]) => `<div class="skill-row"><span id="skill-${id}"><span aria-hidden="true">${skill.icon}</span> ${skill.name}</span><strong>${getSkillScore(id)}%</strong><div class="progress-track" role="progressbar" aria-labelledby="skill-${id}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${getSkillScore(id)}"><span style="width:${getSkillScore(id)}%;background:${skill.color}"></span></div></div>`).join('')}</div><p class="fine-print">Os números mostram seu desempenho nos jogos. Não são uma avaliação de saúde.</p></section>
     <section class="panel settings"><span class="eyebrow">AJUSTES DO SITE</span><h2>Configuração geral</h2>
-      <p>Personalize a interface e o tamanho dos controles para ficar confortável para você.</p>
+      <p>Ajuste o tamanho dos controles para ficar confortável para você.</p>
       <label class="hud-size-setting" for="hudSize"><span><strong>Tamanho geral do site</strong><small>Redimensiona textos, jogos, cartões e controles.</small></span><select id="hudSize" data-setting="hudSize"><option value="compact" ${state.settings.hudSize === 'compact' ? 'selected' : ''}>Compacto</option><option value="normal" ${state.settings.hudSize === 'normal' ? 'selected' : ''}>Padrão</option><option value="large" ${state.settings.hudSize === 'large' ? 'selected' : ''}>Ampliado</option></select></label>
-      <button type="button" class="secondary-button" data-action="welcome-edit">Personalizar minha experiência</button>
-      <button type="button" class="secondary-button" data-action="preferences">Mais preferências e acessibilidade</button>
+      <div class="settings-actions"><button type="button" class="secondary-button" data-action="welcome-edit">Personalizar minha experiência</button>
+      <button type="button" class="secondary-button" data-action="preferences">Mais preferências e acessibilidade</button></div>
       <p class="fine-print">O progresso fica salvo neste navegador e neste dispositivo. O histórico reúne as últimas 200 partidas. Limpar os dados do navegador pode apagar seu progresso.</p>
-      <button type="button" class="text-link reset-link" data-action="reset">Apagar meu progresso</button></section>`;
+      <button type="button" class="text-link reset-link" data-action="reset">Apagar meu progresso</button></section></div>`;
 }
 function renderPreferences() {
   const settings = getState().settings;
-  const options = [
-    ['largeText', 'Texto maior', 'Amplia o texto e organiza as atividades em lista para facilitar a leitura.'],
-    ['highContrast', 'Alto contraste', 'Aumenta a distinção entre textos, botões e fundos. As atividades são mostradas em lista.'],
-    ['reducedMotion', 'Reduzir movimentos', 'Desativa animações decorativas e transições. A preferência do aparelho também é respeitada.'],
-    ['comfortablePace', 'Jogar no meu ritmo', 'Nos pares e nas sequências, você decide quando terminar de observar. Pode repetir sem perder pontos.'],
-    ['mapList', 'Mapa em lista', 'Mostra as próximas fases em ordem, com instruções e situação de desbloqueio.'],
-    ['sound', 'Sons do jogo', 'Ativa respostas sonoras suaves. As instruções e os resultados também aparecem em texto.']
+  const groups = [
+    { title: 'Leitura e visual', options: [
+      ['largeText', 'Texto maior', 'Amplia o texto e organiza as atividades em lista para facilitar a leitura.'],
+      ['highContrast', 'Alto contraste', 'Aumenta a distinção entre textos, botões e fundos. As atividades são mostradas em lista.'],
+      ['mapList', 'Mapa em lista', 'Mostra as próximas fases em ordem, com instruções e situação de desbloqueio.'],
+      ['colorblindMode', 'Modo para daltonismo', 'Mostra o nome das cores nos marcadores do mapa e nos botões coloridos do jogo.']
+    ] },
+    { title: 'Conforto ao jogar', options: [
+      ['reducedMotion', 'Reduzir movimentos', 'Desativa animações decorativas e transições. A preferência do aparelho também é respeitada.'],
+      ['comfortablePace', 'Jogar no meu ritmo', 'Nos pares e nas sequências, você decide quando terminar de observar. Pode repetir sem perder pontos.'],
+      ['sound', 'Sons do jogo', 'Ativa respostas sonoras suaves. As instruções e os resultados também aparecem em texto.'],
+      ['voiceGuidance', 'Leitura em voz alta', 'Lê as instruções ao abrir uma tela ou jogo e o nome dos controles ao navegar. O texto continua visível.']
+    ] }
   ];
-  view.innerHTML = `<button type="button" class="back-button" data-action="preferences-back">← Voltar</button><section class="panel settings"><span class="eyebrow">DO SEU JEITO</span><h1>Acessibilidade e preferências</h1><p>Escolha o que deixa a experiência mais confortável. Você pode mudar estas opções quando quiser.</p>${options.map(([key, title, description]) => `<label for="setting-${key}"><span><strong id="setting-title-${key}">${title}</strong><small id="setting-help-${key}">${description}</small></span><input id="setting-${key}" type="checkbox" data-setting="${key}" aria-labelledby="setting-title-${key}" aria-describedby="setting-help-${key}" ${settings[key] ? 'checked' : ''}></label>`).join('')}<p class="fine-print">Suas preferências ficam neste aparelho e são mantidas quando você apaga o progresso dos jogos.</p></section>`;
+  const renderOptions = options => options.map(([key, title, description]) => `<label for="setting-${key}"><span><strong id="setting-title-${key}">${title}</strong><small id="setting-help-${key}">${description}</small></span><input id="setting-${key}" type="checkbox" data-setting="${key}" aria-labelledby="setting-title-${key}" aria-describedby="setting-help-${key}" ${settings[key] ? 'checked' : ''}></label>`).join('');
+  view.innerHTML = `<div class="preferences-layout"><button type="button" class="back-button" data-action="preferences-back">← Voltar</button><section class="panel settings preferences-panel"><span class="eyebrow">DO SEU JEITO</span><h1>Acessibilidade e preferências</h1><p>Escolha o que deixa a experiência mais confortável. Você pode mudar estas opções quando quiser.</p><div class="preferences-groups">${groups.map(group => `<section class="preference-group"><h2>${group.title}</h2><div class="preferences-options">${renderOptions(group.options)}</div></section>`).join('')}</div><p class="fine-print">Suas preferências ficam neste aparelho e são mantidas quando você apaga o progresso dos jogos.</p></section></div>`;
 }
 function renderPlay(id) {
   const level = getLevel(id); if (!level || !canPlay(id)) return navigate('map');
@@ -286,6 +344,7 @@ function render() {
   else renderHome();
   const heading = view.querySelector('h1');
   if (heading) { heading.tabIndex = -1; document.title = `${heading.textContent} · Mente & Movimento`; }
+  speakInstructions();
 }
 document.addEventListener('click', event => {
   const button = event.target.closest('[data-action]'); if (!button || button.disabled) return;
@@ -298,6 +357,7 @@ document.addEventListener('click', event => {
     return;
   }
   if (action === 'play' && !canPlay(id)) { notify(`Conclua a etapa ${getLevel(id)?.number - 1} para liberar esta atividade.`); return; }
+  if (action === 'play' && route.page === 'map') { mapScrollY = window.scrollY; mapReturnLevelId = String(id); }
   if (['home', 'map', 'profile', 'preferences', 'play'].includes(action)) navigate(action, id);
   if (action === 'preferences-back') navigate(preferencesReturn.page, preferencesReturn.id);
   if (action === 'map-mode') {
@@ -329,7 +389,8 @@ document.addEventListener('submit', event => {
     hudSize: form.querySelector('[name="hudSize"]').value,
     comfortablePace: form.querySelector('[name="comfortablePace"]').checked,
     largeText: form.querySelector('[name="largeText"]').checked,
-    sound: form.querySelector('[name="sound"]').checked
+    sound: form.querySelector('[name="sound"]').checked,
+    voiceGuidance: form.querySelector('[name="voiceGuidance"]').checked
   });
   if (!completed) {
     const input = form.querySelector('[name="name"]'), error = form.querySelector('#welcomeNameError');
@@ -345,5 +406,14 @@ document.addEventListener('input', event => {
   event.target.removeAttribute('aria-invalid');
   document.querySelector('#welcomeNameError').hidden = true;
 });
-document.addEventListener('change', event => { const key = event.target.dataset.setting; const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value; if (key && updateSetting(key, value)) { updateShell(); notify(getStorageStatus() === 'available' ? 'Preferência salva.' : 'Preferência alterada nesta sessão. Não foi possível salvar.'); } });
+document.addEventListener('change', event => {
+  const key = event.target.dataset.setting, value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+  if (key && updateSetting(key, value)) {
+    updateShell(); notify(getStorageStatus() === 'available' ? 'Preferência salva.' : 'Preferência alterada nesta sessão. Não foi possível salvar.');
+    if (key === 'voiceGuidance') {
+      if (value) speakText('Leitura em voz alta ativada. As instruções e os nomes dos controles serão lidos.');
+      else if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    }
+  }
+});
 render();

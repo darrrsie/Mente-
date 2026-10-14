@@ -23,6 +23,7 @@ test('navegador: jogos, acessibilidade, teclado e navegação móvel', { skip: !
     ['/src/state.js', ['src/state.js', 'text/javascript']], ['/src/games.js', ['src/games.js', 'text/javascript']],
     ['/src/styles.css', ['src/styles.css', 'text/css']], ['/assets/icon-512.png', ['assets/icon-512.png', 'image/png']],
     ['/assets/map-garden.svg', ['assets/map-garden.svg', 'image/svg+xml']],
+    ['/src/themes.css', ['src/themes.css', 'text/css']],
     ['/test-games.js', ['src/games.js', 'text/javascript']],
     ['/test-tutorials.js', ['src/tutorials.js', 'text/javascript']]
   ]);

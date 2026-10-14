@@ -99,7 +99,7 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
     area.innerHTML = `<p class="game-tip">Toque em uma fruta. Depois, toque na cesta com o mesmo nome.</p>
       <div class="sort-steps" aria-hidden="true"><span class="active">1 · Escolha a fruta</span><span>2 · Escolha a cesta</span></div>
       <p class="sort-selection" id="sortSelection">Qual fruta vamos guardar?</p>
-      <div class="sort-items" id="sortItems"></div><div class="sort-baskets" id="sortBaskets"></div>
+      <div class="sort-workspace"><section class="sort-zone"><h3>Frutas</h3><div class="sort-items" id="sortItems"></div></section><section class="sort-zone"><h3>Cestas</h3><div class="sort-baskets" id="sortBaskets"></div></section></div>
       <p class="game-counter" id="counter">0 de ${items.length} objetos organizados</p>`;
     const tray = area.querySelector('#sortItems'), baskets = area.querySelector('#sortBaskets');
     function pick(button) {
@@ -364,7 +364,7 @@ export function startGame({ id, mount, support = 0, difficulty = 0, settings = {
     const start = area.querySelector('#sequenceStart'), pace = area.querySelector('#sequencePace');
     const pads = colors.map((color, i) => {
       const pad = document.createElement('button'); pad.type = 'button'; pad.className = `sequence-pad ${color.cls}`;
-      pad.innerHTML = `<span aria-hidden="true">${color.icon}</span><strong>${color.name}<small>${color.shape}</small></strong>`;
+      pad.innerHTML = `<span aria-hidden="true">${color.icon}</span><strong>${color.name}<small>${color.shape}</small></strong><em class="colorblind-cue" aria-hidden="true">Cor: ${color.name}</em>`;
       pad.setAttribute('aria-label', `${color.name}, ${color.shape.toLowerCase()}`);
       pad.addEventListener('click', () => press(i)); grid.appendChild(pad); return pad;
     });

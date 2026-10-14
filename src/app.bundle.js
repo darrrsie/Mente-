@@ -1,13 +1,13 @@
 (() => {
   // src/state.js
   var LEVELS = [
-    { id: "sort", number: 1, name: "Organize a Feira", short: "Arraste objetos", icon: "🍎", skill: "Coordenação", skills: ["coordination", "visual"], color: "coral", intro: "Hoje vamos treinar sua coordenação!", steps: ["Escolha uma fruta.", "Leve até a cesta igual.", "Você também pode tocar na fruta e na cesta."], objective: "Coloque cada fruta na cesta correta." },
-    { id: "pairs", number: 2, name: "Pares do Jardim", short: "Encontre pares", icon: "🌼", skill: "Memória", skills: ["memory", "attention"], color: "yellow", intro: "Hoje vamos treinar sua memória!", steps: ["Observe as cartas.", "Toque em duas de cada vez.", "Encontre as figuras iguais."], objective: "Encontre todos os pares." },
-    { id: "path", number: 3, name: "Trilha da Borboleta", short: "Siga uma linha", icon: "🦋", skill: "Coordenação", skills: ["coordination", "visual"], color: "blue", intro: "Hoje vamos treinar a precisão!", steps: ["Comece na flor.", "Siga o caminho com o dedo ou escolha avançar com toques.", "Chegue até a borboleta."], objective: "Siga a trilha do início ao fim." },
-    { id: "sequence", number: 4, name: "Cores em Festa", short: "Memorize a sequência", icon: "🎨", skill: "Memória", skills: ["memory", "reasoning"], color: "purple", intro: "Hoje vamos treinar sua atenção!", steps: ["Leia ou observe a sequência de cores e formas.", "Depois, repita desde o primeiro símbolo.", "Selecione os botões na mesma ordem."], objective: "Repita a sequência de cores e formas." },
-    { id: "differences", number: 5, name: "Dois Jardins", short: "Encontre diferenças", icon: "👀", skill: "Atenção", skills: ["attention", "visual"], color: "green", intro: "Hoje vamos observar os detalhes!", steps: ["Veja os dois jardins.", "Procure o que mudou.", "Toque no detalhe diferente."], objective: "Encontre as diferenças entre os jardins." },
-    { id: "oddone", number: 6, name: "Intruso no Jardim", short: "Encontre o diferente", icon: "🔎", skill: "Atenção", skills: ["attention", "visual"], color: "coral", intro: "Hoje vamos procurar um detalhe que não combina!", steps: ["Observe todos os símbolos.", "Compare um por um.", "Toque no diferente em cada uma das três rodadas."], objective: "Encontre o símbolo diferente nas três rodadas." },
-    { id: "counting", number: 7, name: "Contagem da Colheita", short: "Conte os objetos", icon: "🧺", skill: "Raciocínio", skills: ["reasoning", "attention"], color: "yellow", intro: "Hoje vamos contar com atenção!", steps: ["Observe os objetos espalhados.", "Conte apenas o símbolo indicado.", "Escolha a quantidade correta nas três rodadas."], objective: "Conte os objetos pedidos nas três rodadas." }
+    { id: "sort", number: 1, name: "Organize a Feira", short: "Arraste objetos", icon: "🍎", skill: "Coordenação", skills: ["coordination", "visual"], color: "coral", intro: "Hoje vamos treinar sua coordenação!", steps: ["Escolha uma fruta.", "Leve até a cesta igual.", "Você também pode tocar na fruta e na cesta."], objective: "Leve cada fruta à cesta certa." },
+    { id: "pairs", number: 2, name: "Pares do Jardim", short: "Encontre pares", icon: "🌼", skill: "Memória", skills: ["memory", "attention"], color: "yellow", intro: "Hoje vamos treinar sua memória!", steps: ["Observe as cartas.", "Toque em duas de cada vez.", "Encontre as figuras iguais."], objective: "Encontre as figuras iguais." },
+    { id: "path", number: 3, name: "Trilha da Borboleta", short: "Siga uma linha", icon: "🦋", skill: "Coordenação", skills: ["coordination", "visual"], color: "blue", intro: "Hoje vamos treinar a precisão!", steps: ["Comece na flor.", "Siga o caminho com o dedo ou escolha avançar com toques.", "Chegue até a borboleta."], objective: "Siga o caminho até a borboleta." },
+    { id: "sequence", number: 4, name: "Cores em Festa", short: "Memorize a sequência", icon: "🎨", skill: "Memória", skills: ["memory", "reasoning"], color: "purple", intro: "Hoje vamos treinar sua atenção!", steps: ["Leia ou observe a sequência de cores e formas.", "Depois, repita desde o primeiro símbolo.", "Selecione os botões na mesma ordem."], objective: "Repita a sequência." },
+    { id: "differences", number: 5, name: "Dois Jardins", short: "Encontre diferenças", icon: "👀", skill: "Atenção", skills: ["attention", "visual"], color: "green", intro: "Hoje vamos observar os detalhes!", steps: ["Veja os dois jardins.", "Procure o que mudou.", "Toque no detalhe diferente."], objective: "Encontre o que mudou nos jardins." },
+    { id: "oddone", number: 6, name: "Intruso no Jardim", short: "Encontre o diferente", icon: "🔎", skill: "Atenção", skills: ["attention", "visual"], color: "coral", intro: "Hoje vamos procurar um detalhe que não combina!", steps: ["Observe todos os símbolos.", "Compare um por um.", "Toque no diferente em cada uma das três rodadas."], objective: "Toque no símbolo diferente." },
+    { id: "counting", number: 7, name: "Contagem da Colheita", short: "Conte os objetos", icon: "🧺", skill: "Raciocínio", skills: ["reasoning", "attention"], color: "yellow", intro: "Hoje vamos contar com atenção!", steps: ["Observe os objetos espalhados.", "Conte apenas o símbolo indicado.", "Escolha a quantidade correta nas três rodadas."], objective: "Conte os objetos indicados." }
   ];
   var SKILLS = {
     memory: { name: "Memória", icon: "🧠", color: "#a77ce1" },
@@ -43,7 +43,7 @@
     lastDay: "",
     unlocked: 1,
     stageRecords: {},
-    settings: { largeText: false, sound: true, highContrast: false, reducedMotion: false, comfortablePace: true, mapList: false, hudSize: "normal" },
+    settings: { largeText: false, sound: true, highContrast: false, reducedMotion: false, comfortablePace: true, mapList: false, voiceGuidance: false, colorblindMode: false, hudSize: "normal" },
     levels: Object.fromEntries(LEVELS.map((level) => [level.id, { stars: 0, bestScore: 0, plays: 0, support: 0 }])),
     history: [],
     skills: Object.fromEntries(Object.keys(SKILLS).map((id) => [id, { total: 0, count: 0 }]))
@@ -60,7 +60,7 @@
       fresh.lastDay = /^\d{4}-\d{2}-\d{2}$/.test(saved.lastDay || "") ? saved.lastDay : "";
       fresh.unlocked = Math.max(1, Math.min(MAX_LEVEL, bounded(saved.unlocked, 1, MAX_LEVEL)));
       for (const key of Object.keys(fresh.settings)) {
-        if (typeof saved.settings?.[key] === "boolean") fresh.settings[key] = saved.settings[key];
+        if (typeof fresh.settings[key] === "boolean" && typeof saved.settings?.[key] === "boolean") fresh.settings[key] = saved.settings[key];
       }
       if (["compact", "normal", "large"].includes(saved.settings?.hudSize)) fresh.settings.hudSize = saved.settings.hudSize;
       for (const level of LEVELS) {
@@ -181,7 +181,7 @@
     if (!normalizedName) return false;
     state.name = normalizedName;
     if (["compact", "normal", "large"].includes(hudSize)) state.settings.hudSize = hudSize;
-    for (const [key, value] of Object.entries({ comfortablePace, sound: sound2, largeText })) {
+    for (const [key, value] of Object.entries({ comfortablePace, sound: sound2, largeText, voiceGuidance })) {
       if (typeof value === "boolean") state.settings[key] = value;
     }
     state.onboardingComplete = true;
@@ -190,7 +190,8 @@
   }
   function updateSetting(key, value) {
     if (!Object.prototype.hasOwnProperty.call(state.settings, key)) return false;
-    if (key === "hudSize" ? !["compact", "normal", "large"].includes(value) : typeof value !== "boolean") return false;
+    const choices = { hudSize: ["compact", "normal", "large"] };
+    if (choices[key] ? !choices[key].includes(value) : typeof value !== "boolean") return false;
     state.settings[key] = value;
     save();
     return true;
@@ -366,7 +367,7 @@
       area.innerHTML = `<p class="game-tip">Toque em uma fruta. Depois, toque na cesta com o mesmo nome.</p>
       <div class="sort-steps" aria-hidden="true"><span class="active">1 · Escolha a fruta</span><span>2 · Escolha a cesta</span></div>
       <p class="sort-selection" id="sortSelection">Qual fruta vamos guardar?</p>
-      <div class="sort-items" id="sortItems"></div><div class="sort-baskets" id="sortBaskets"></div>
+      <div class="sort-workspace"><section class="sort-zone"><h3>Frutas</h3><div class="sort-items" id="sortItems"></div></section><section class="sort-zone"><h3>Cestas</h3><div class="sort-baskets" id="sortBaskets"></div></section></div>
       <p class="game-counter" id="counter">0 de ${items.length} objetos organizados</p>`;
       const tray = area.querySelector("#sortItems"), baskets = area.querySelector("#sortBaskets");
       function pick(button) {
@@ -696,7 +697,7 @@
         const pad = document.createElement("button");
         pad.type = "button";
         pad.className = `sequence-pad ${color.cls}`;
-        pad.innerHTML = `<span aria-hidden="true">${color.icon}</span><strong>${color.name}<small>${color.shape}</small></strong>`;
+        pad.innerHTML = `<span aria-hidden="true">${color.icon}</span><strong>${color.name}<small>${color.shape}</small></strong><em class="colorblind-cue" aria-hidden="true">Cor: ${color.name}</em>`;
         pad.setAttribute("aria-label", `${color.name}, ${color.shape.toLowerCase()}`);
         pad.addEventListener("click", () => press(i));
         grid.appendChild(pad);
@@ -1079,6 +1080,8 @@
   var noticeTimer = null;
   var audioContext = null;
   var mapPage = 0;
+  var mapScrollY = 0;
+  var mapReturnLevelId = null;
   var dialogTask = null;
   var manualPaused = false;
   var backgroundPaused = false;
@@ -1086,6 +1089,7 @@
   var escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   var stars = (count) => `<span class="stars" role="img" aria-label="${count} de 3 estrelas">${"★".repeat(count)}<span aria-hidden="true">${"★".repeat(3 - count)}</span></span>`;
   var levelRank = () => Math.floor(getState().xp / 200) + 1;
+  var stageColorNames = { coral: "Laranja", yellow: "Amarelo", blue: "Azul", purple: "Roxo", green: "Verde" };
   function sound(ok) {
     if (!getState().settings.sound) return;
     try {
@@ -1104,6 +1108,37 @@
     } catch {
     }
   }
+  var lastSpokenText = "";
+  var lastSpokenAt = 0;
+  function speakText(value) {
+    if (!getState().settings.voiceGuidance || !("speechSynthesis" in window) || typeof window.SpeechSynthesisUtterance !== "function") return;
+    const text = String(value || "").replace(/\s+/g, " ").trim();
+    if (!text) return;
+    const now = Date.now();
+    if (text === lastSpokenText && now - lastSpokenAt < 900) return;
+    lastSpokenText = text;
+    lastSpokenAt = now;
+    window.speechSynthesis.cancel();
+    const utterance = new window.SpeechSynthesisUtterance(text);
+    utterance.lang = "pt-BR";
+    utterance.rate = 0.95;
+    window.speechSynthesis.speak(utterance);
+  }
+  function speakControl(control) {
+    if (!control) return;
+    const label = control.getAttribute("aria-label") || control.getAttribute("aria-labelledby") && document.getElementById(control.getAttribute("aria-labelledby"))?.textContent || [...control.labels || []].map((item) => item.textContent).join(". ") || control.textContent;
+    speakText(label);
+  }
+  function speakInstructions() {
+    const heading = view.querySelector("h1")?.textContent;
+    const instructions = view.querySelector(".game-tip, .welcome-card > p")?.textContent;
+    const prompt = view.querySelector(".sequence-preview, .count-target")?.textContent;
+    speakText([heading, instructions, prompt].filter(Boolean).join(". "));
+  }
+  document.addEventListener("focusin", (event) => {
+    speakControl(event.target.closest("button, input, select, textarea"));
+  });
+  document.addEventListener("click", (event) => speakControl(event.target.closest("button")), true);
   function notify(message) {
     toast.textContent = message;
     toast.classList.add("show");
@@ -1141,6 +1176,7 @@
       document.querySelector("#dialogName").focus();
       document.querySelector("#dialogName").select();
     } else document.querySelector(`[data-dialog="${kind === "help" ? "confirm" : "cancel"}"]`).focus();
+    if (kind === "help") speakText([title, description, guide.textContent, confirmLabel].join(". "));
   }
   document.querySelector('[data-dialog="cancel"]').addEventListener("click", () => dialog.close("cancel"));
   document.querySelector("#dialogForm").addEventListener("submit", (event) => {
@@ -1185,6 +1221,7 @@
     storageNotice.textContent = status === "invalid" ? "Não foi possível ler o progresso salvo. Uma nova sessão foi iniciada neste aparelho." : "Não foi possível salvar neste aparelho. Você pode continuar jogando, mas o progresso poderá ser perdido ao fechar. Confira o espaço disponível e a permissão de armazenamento do navegador.";
     document.documentElement.classList.toggle("large-text", state2.settings.largeText);
     document.documentElement.classList.toggle("high-contrast", state2.settings.highContrast);
+    document.documentElement.classList.toggle("colorblind-mode", state2.settings.colorblindMode);
     document.documentElement.classList.toggle("reduced-motion", state2.settings.reducedMotion);
     document.documentElement.dataset.hudSize = state2.settings.hudSize || "normal";
     document.querySelector("#xpChip").textContent = `✦ ${state2.xp} XP`;
@@ -1215,14 +1252,26 @@
       showDialog({ kind: "exit", title: "Sair desta partida?", description: "O avanço desta partida será perdido. As etapas concluídas continuarão salvas.", confirmLabel: "Sair da partida", onConfirm: () => navigate(page, id, true) });
       return;
     }
-    if (page === "preferences" && route.page !== "preferences") preferencesReturn = ["home", "map", "profile"].includes(route.page) ? { ...route } : { page: "map" };
+    if (page === "preferences" && route.page !== "preferences") preferencesReturn = ["home", "map", "profile"].includes(route.page) ? { ...route, scrollY: window.scrollY } : { page: "map", scrollY: 0 };
+    const returningToMap = page === "map" && ["play", "result"].includes(route.page);
+    const returningFromPreferences = route.page === "preferences" && page === preferencesReturn.page;
     cleanup?.();
     cleanup = null;
     manualPaused = false;
     route = { page, id };
     render();
-    window.scrollTo(0, 0);
-    focusHeading();
+    if (returningToMap) {
+      window.scrollTo(0, mapScrollY);
+      const returnButton = mapReturnLevelId && view.querySelector(`[data-action="play"][data-id="${mapReturnLevelId}"]`);
+      if (returnButton) returnButton.focus({ preventScroll: true });
+      else focusHeading();
+    } else if (returningFromPreferences) {
+      window.scrollTo(0, preferencesReturn.scrollY || 0);
+      focusHeading();
+    } else {
+      window.scrollTo(0, 0);
+      focusHeading();
+    }
   }
   window.jardimBack = () => {
     if (dialog.open) {
@@ -1242,7 +1291,7 @@
   document.addEventListener("visibilitychange", () => window.jardimPause(document.hidden));
   function renderHome() {
     const state2 = getState(), current = nextLevel(), today = Math.min(getTodayPlays(), 3);
-    view.innerHTML = `<section class="hero">
+    view.innerHTML = `<div class="home-layout"><section class="hero">
     <div class="hero-top"><span class="eyebrow">SEU CANTINHO DE JOGAR</span><span class="hero-spark">✦</span></div>
     <div class="hero-illustration" aria-hidden="true"><span class="hero-orbit"></span><span class="hero-main">🧠</span><span class="hero-bubble one">🌼</span><span class="hero-bubble two">🦋</span><span class="hero-bubble three">✦</span></div>
     <div class="hero-copy"><h1>Olá, ${escapeHtml(state2.name)}! <span class="wave">👋</span></h1>
@@ -1255,9 +1304,9 @@
     <div class="skill-pills"><span>🧠 Memória</span><span>🎯 Coordenação</span><span>👁️ Atenção</span></div>
   </section>
   <section class="home-stats"><div><span>🔥</span><strong>${getStreak()}</strong><small>${getStreak() === 1 ? "dia seguido" : "dias seguidos"}</small></div><div><span>⭐</span><strong>${Object.values(state2.stageRecords).reduce((sum, record) => sum + record.stars, 0)}</strong><small>estrelas</small></div><div><span>✦</span><strong>${state2.xp}</strong><small>pontos XP</small></div></section>
-  <div class="section-heading below"><div><span class="eyebrow">PRÓXIMA AVENTURA</span><h2>Continue sua jornada</h2></div><button type="button" class="text-link" data-action="map">Ver mapa →</button></div>
+  <section class="home-journey"><div class="section-heading below"><div><span class="eyebrow">PRÓXIMA AVENTURA</span><h2>Continue sua jornada</h2></div><button type="button" class="text-link" data-action="map">Ver mapa →</button></div>
   <button type="button" class="next-card ${current.color}" data-action="play" data-id="${current.id}"><span class="next-icon">${current.icon}</span><span><small>ETAPA ${String(current.number).padStart(2, "0")} • ${current.skill.toUpperCase()}</small><strong>${current.name}</strong><em>${current.objective}</em></span><b aria-hidden="true">→</b></button>
-  <p class="soft-note">Cada tentativa conta. Divirta-se no seu tempo! 💛</p>`;
+  </section><p class="soft-note">Cada tentativa conta. Divirta-se no seu tempo! 💛</p></div>`;
   }
   function renderWelcome() {
     const settings = getState().settings;
@@ -1269,6 +1318,7 @@
       <label class="welcome-check" for="welcomePace"><span><strong>Quero jogar no meu ritmo</strong><small>Sem pressa para observar as cartas e sequências.</small></span><input id="welcomePace" name="comfortablePace" type="checkbox" ${settings.comfortablePace ? "checked" : ""}></label>
       <label class="welcome-check" for="welcomeText"><span><strong>Texto maior</strong><small>Facilita a leitura e mostra as fases em lista.</small></span><input id="welcomeText" name="largeText" type="checkbox" ${settings.largeText ? "checked" : ""}></label>
       <label class="welcome-check" for="welcomeSound"><span><strong>Sons suaves</strong><small>Ativa respostas sonoras durante os jogos.</small></span><input id="welcomeSound" name="sound" type="checkbox" ${settings.sound ? "checked" : ""}></label>
+      <label class="welcome-check" for="welcomeVoice"><span><strong>Leitura em voz alta</strong><small>Lê as instruções e os nomes dos controles. O texto continua visível.</small></span><input id="welcomeVoice" name="voiceGuidance" type="checkbox" ${settings.voiceGuidance ? "checked" : ""}></label>
       <div class="welcome-actions"><button type="submit" class="primary-button">Começar</button></div>
     </form></section>`;
   }
@@ -1286,7 +1336,9 @@
       view.innerHTML = `${toolbar}${pageControls}<section class="level-list"><h1>Uma jornada que continua</h1><p>Os sete jogos voltam em novos ciclos. Cada ciclo exige um pouco mais de foco.</p><ol class="level-list-items">${stages.map((level) => {
         const open = canPlay(level.number), record = state2.stageRecords[level.number];
         const status = open ? record ? `${record.stars} de 3 estrelas. Jogar novamente.` : "Disponível para jogar." : `Conclua a fase ${level.number - 1} para liberar.`;
-        return `<li class="level-list-item"><button type="button" class="level-list-button" data-action="play" data-id="${level.number}" aria-disabled="${!open}" aria-label="Fase ${level.number}, ciclo ${level.cycle}: ${level.name}. ${level.objective} ${status}"><span class="level-list-icon" aria-hidden="true">${level.icon}</span><span class="level-list-description"><small>FASE ${level.number} · CICLO ${level.cycle} · ${level.skill}</small><strong>${level.name}</strong><span>${level.objective}</span><span class="level-list-status">${status}</span></span></button></li>`;
+        const colorName = stageColorNames[level.color];
+        const colorLabel = state2.settings.colorblindMode ? ` Cor de destaque: ${colorName}.` : "";
+        return `<li class="level-list-item"><button type="button" class="level-list-button" data-action="play" data-id="${level.number}" aria-disabled="${!open}" aria-label="Fase ${level.number}, ciclo ${level.cycle}: ${level.name}. ${level.objective}${colorLabel} ${status}"><span class="level-list-icon" aria-hidden="true">${level.icon}</span><span class="level-list-description"><small>FASE ${level.number} · CICLO ${level.cycle} · ${level.skill}</small><strong>${level.name}</strong><span>${level.objective}</span><span class="colorblind-cue" aria-hidden="true">Cor de destaque: ${colorName}</span><span class="level-list-status">${status}</span></span></button></li>`;
       }).join("")}</ol></section>`;
       return;
     }
@@ -1311,17 +1363,24 @@
     ${stages.map((level, index) => {
       const { x, y } = points[index], open = canPlay(level.number);
       const record = state2.stageRecords[level.number], active = level.number === state2.unlocked;
+      const colorName = stageColorNames[level.color];
       return `<div class="map-stage ${level.color} ${open ? "available" : "locked"} ${record ? "complete" : ""} ${active ? "current" : ""}" style="--stage-x:${x / 360 * 100}%;--stage-y:${y}px">
         <button type="button" class="map-node" data-action="play" data-id="${level.number}" aria-disabled="${!open}" aria-label="Fase ${level.number}, ciclo ${level.cycle}: ${level.name}. ${open ? record ? `${record.stars} estrelas. Jogar novamente.` : "Disponível para jogar." : `Bloqueada. Conclua a fase ${level.number - 1}.`}">
           <span class="map-node-number">${String(level.number).padStart(2, "0")}</span><span class="map-node-icon" aria-hidden="true">${open ? level.icon : "🔒"}</span>
         </button>
-        <div class="map-stage-label"><strong>Fase ${level.number} · ${level.name}</strong><small>Ciclo ${level.cycle} · ${open ? level.skill : "Bloqueada"}</small></div>
+        <div class="map-stage-label"><strong>${level.name}</strong><small>${open ? level.skill : "Bloqueada"}</small><span class="colorblind-cue" aria-hidden="true">Cor: ${colorName}</span></div>
         ${record ? `<span class="map-earned" aria-label="${record.stars} de 3 estrelas">${"★".repeat(record.stars)}${"☆".repeat(3 - record.stars)}</span>` : active ? '<span class="map-play-hint">JOGAR AGORA</span>' : ""}
       </div>`;
     }).join("")}
     <div class="map-start" aria-hidden="true">✦ MAIS DESAFIOS</div>
     </div></div>
   </section>`;
+    if (state2.settings.colorblindMode && !inList) {
+      view.querySelectorAll(".map-stage").forEach((stage) => {
+        const button = stage.querySelector(".map-node"), colorCue = stage.querySelector(".colorblind-cue")?.textContent;
+        if (button && colorCue) button.setAttribute("aria-label", `${button.getAttribute("aria-label")} Cor de destaque: ${colorCue.replace(/^Cor:\s*/, "")}.`);
+      });
+    }
   }
   function renderProfile() {
     const state2 = getState(), days = getWeeklyDays(), weeklyMax = Math.max(3, ...days.map((d) => d.count));
@@ -1330,30 +1389,37 @@
       { icon: "⭐", label: "Colecionador", earned: Object.values(state2.stageRecords).reduce((sum, item) => sum + item.stars, 0) >= 5, goal: "Conquiste 5 estrelas" },
       { icon: "🔥", label: "3 dias de jogo", earned: getStreak() >= 3, goal: "Jogue por 3 dias seguidos" }
     ];
-    view.innerHTML = `<section class="profile-hero"><div class="avatar" aria-hidden="true">${escapeHtml(state2.name.charAt(0).toUpperCase())}</div><div><span class="eyebrow">SEU PERFIL</span><h1>${escapeHtml(state2.name)}</h1><p>Nível ${levelRank()} · ${state2.xp} XP</p></div><button type="button" class="icon-button" data-action="edit-name" aria-label="Editar nome">✎</button></section>
+    view.innerHTML = `<div class="profile-layout"><section class="profile-hero"><div class="avatar" aria-hidden="true">${escapeHtml(state2.name.charAt(0).toUpperCase())}</div><div><span class="eyebrow">SEU PERFIL</span><h1>${escapeHtml(state2.name)}</h1><p>Nível ${levelRank()} · ${state2.xp} XP</p></div><button type="button" class="icon-button" data-action="edit-name" aria-label="Editar nome">✎</button></section>
     <div class="profile-stats"><div><strong>${state2.plays}</strong><span>partidas concluídas</span></div><div><strong>${state2.minutes}</strong><span>minutos aproximados</span></div><div><strong>${getPracticedDays()}</strong><span>dias no histórico</span></div><div><strong>${getStreak()}</strong><span>dias seguidos</span></div></div>
     <section class="panel"><div class="section-heading"><div><span class="eyebrow">PASSO A PASSO</span><h2>Sua semana</h2></div><span aria-hidden="true">📅</span></div><div class="week-chart" role="list" aria-label="Atividades dos últimos sete dias">${days.map((d) => `<div role="listitem" aria-label="${d.label}, ${d.date}: ${d.count} atividades concluídas"><div class="week-bar" aria-hidden="true"><span style="height:${Math.max(8, d.count / weeklyMax * 100)}%" class="${d.count ? "played" : ""}"></span></div><small aria-hidden="true">${d.label}</small><b aria-hidden="true">${d.count}</b></div>`).join("")}</div><p class="fine-print">Cada barra mostra atividades concluídas no site.</p></section>
     <section class="panel"><span class="eyebrow">SUAS CONQUISTAS</span><h2>Medalhas</h2><div class="medal-list">${medals.map((medal) => `<div class="${medal.earned ? "" : "pending"}"><span aria-hidden="true">${medal.icon}</span><strong>${medal.label}</strong><small>${medal.earned ? "Conquistada" : medal.goal}</small></div>`).join("")}</div></section>
     <section class="panel"><span class="eyebrow">NO SEU RITMO</span><h2>Habilidades jogadas</h2><div class="skill-bars">${Object.entries(SKILLS).map(([id, skill]) => `<div class="skill-row"><span id="skill-${id}"><span aria-hidden="true">${skill.icon}</span> ${skill.name}</span><strong>${getSkillScore(id)}%</strong><div class="progress-track" role="progressbar" aria-labelledby="skill-${id}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${getSkillScore(id)}"><span style="width:${getSkillScore(id)}%;background:${skill.color}"></span></div></div>`).join("")}</div><p class="fine-print">Os números mostram seu desempenho nos jogos. Não são uma avaliação de saúde.</p></section>
     <section class="panel settings"><span class="eyebrow">AJUSTES DO SITE</span><h2>Configuração geral</h2>
-      <p>Personalize a interface e o tamanho dos controles para ficar confortável para você.</p>
+      <p>Ajuste o tamanho dos controles para ficar confortável para você.</p>
       <label class="hud-size-setting" for="hudSize"><span><strong>Tamanho geral do site</strong><small>Redimensiona textos, jogos, cartões e controles.</small></span><select id="hudSize" data-setting="hudSize"><option value="compact" ${state2.settings.hudSize === "compact" ? "selected" : ""}>Compacto</option><option value="normal" ${state2.settings.hudSize === "normal" ? "selected" : ""}>Padrão</option><option value="large" ${state2.settings.hudSize === "large" ? "selected" : ""}>Ampliado</option></select></label>
-      <button type="button" class="secondary-button" data-action="welcome-edit">Personalizar minha experiência</button>
-      <button type="button" class="secondary-button" data-action="preferences">Mais preferências e acessibilidade</button>
+      <div class="settings-actions"><button type="button" class="secondary-button" data-action="welcome-edit">Personalizar minha experiência</button>
+      <button type="button" class="secondary-button" data-action="preferences">Mais preferências e acessibilidade</button></div>
       <p class="fine-print">O progresso fica salvo neste navegador e neste dispositivo. O histórico reúne as últimas 200 partidas. Limpar os dados do navegador pode apagar seu progresso.</p>
-      <button type="button" class="text-link reset-link" data-action="reset">Apagar meu progresso</button></section>`;
+      <button type="button" class="text-link reset-link" data-action="reset">Apagar meu progresso</button></section></div>`;
   }
   function renderPreferences() {
     const settings = getState().settings;
-    const options = [
-      ["largeText", "Texto maior", "Amplia o texto e organiza as atividades em lista para facilitar a leitura."],
-      ["highContrast", "Alto contraste", "Aumenta a distinção entre textos, botões e fundos. As atividades são mostradas em lista."],
-      ["reducedMotion", "Reduzir movimentos", "Desativa animações decorativas e transições. A preferência do aparelho também é respeitada."],
-      ["comfortablePace", "Jogar no meu ritmo", "Nos pares e nas sequências, você decide quando terminar de observar. Pode repetir sem perder pontos."],
-      ["mapList", "Mapa em lista", "Mostra as próximas fases em ordem, com instruções e situação de desbloqueio."],
-      ["sound", "Sons do jogo", "Ativa respostas sonoras suaves. As instruções e os resultados também aparecem em texto."]
+    const groups = [
+      { title: "Leitura e visual", options: [
+        ["largeText", "Texto maior", "Amplia o texto e organiza as atividades em lista para facilitar a leitura."],
+        ["highContrast", "Alto contraste", "Aumenta a distinção entre textos, botões e fundos. As atividades são mostradas em lista."],
+        ["mapList", "Mapa em lista", "Mostra as próximas fases em ordem, com instruções e situação de desbloqueio."],
+        ["colorblindMode", "Modo para daltonismo", "Mostra o nome das cores nos marcadores do mapa e nos botões coloridos do jogo."]
+      ] },
+      { title: "Conforto ao jogar", options: [
+        ["reducedMotion", "Reduzir movimentos", "Desativa animações decorativas e transições. A preferência do aparelho também é respeitada."],
+        ["comfortablePace", "Jogar no meu ritmo", "Nos pares e nas sequências, você decide quando terminar de observar. Pode repetir sem perder pontos."],
+        ["sound", "Sons do jogo", "Ativa respostas sonoras suaves. As instruções e os resultados também aparecem em texto."],
+        ["voiceGuidance", "Leitura em voz alta", "Lê as instruções ao abrir uma tela ou jogo e o nome dos controles ao navegar. O texto continua visível."]
+      ] }
     ];
-    view.innerHTML = `<button type="button" class="back-button" data-action="preferences-back">← Voltar</button><section class="panel settings"><span class="eyebrow">DO SEU JEITO</span><h1>Acessibilidade e preferências</h1><p>Escolha o que deixa a experiência mais confortável. Você pode mudar estas opções quando quiser.</p>${options.map(([key, title, description]) => `<label for="setting-${key}"><span><strong id="setting-title-${key}">${title}</strong><small id="setting-help-${key}">${description}</small></span><input id="setting-${key}" type="checkbox" data-setting="${key}" aria-labelledby="setting-title-${key}" aria-describedby="setting-help-${key}" ${settings[key] ? "checked" : ""}></label>`).join("")}<p class="fine-print">Suas preferências ficam neste aparelho e são mantidas quando você apaga o progresso dos jogos.</p></section>`;
+    const renderOptions = (options) => options.map(([key, title, description]) => `<label for="setting-${key}"><span><strong id="setting-title-${key}">${title}</strong><small id="setting-help-${key}">${description}</small></span><input id="setting-${key}" type="checkbox" data-setting="${key}" aria-labelledby="setting-title-${key}" aria-describedby="setting-help-${key}" ${settings[key] ? "checked" : ""}></label>`).join("");
+    view.innerHTML = `<div class="preferences-layout"><button type="button" class="back-button" data-action="preferences-back">← Voltar</button><section class="panel settings preferences-panel"><span class="eyebrow">DO SEU JEITO</span><h1>Acessibilidade e preferências</h1><p>Escolha o que deixa a experiência mais confortável. Você pode mudar estas opções quando quiser.</p><div class="preferences-groups">${groups.map((group) => `<section class="preference-group"><h2>${group.title}</h2><div class="preferences-options">${renderOptions(group.options)}</div></section>`).join("")}</div><p class="fine-print">Suas preferências ficam neste aparelho e são mantidas quando você apaga o progresso dos jogos.</p></section></div>`;
   }
   function renderPlay(id) {
     const level = getLevel(id);
@@ -1414,6 +1480,7 @@
       heading.tabIndex = -1;
       document.title = `${heading.textContent} · Mente & Movimento`;
     }
+    speakInstructions();
   }
   document.addEventListener("click", (event) => {
     const button = event.target.closest("[data-action]");
@@ -1436,6 +1503,10 @@
     if (action === "play" && !canPlay(id)) {
       notify(`Conclua a etapa ${getLevel(id)?.number - 1} para liberar esta atividade.`);
       return;
+    }
+    if (action === "play" && route.page === "map") {
+      mapScrollY = window.scrollY;
+      mapReturnLevelId = String(id);
     }
     if (["home", "map", "profile", "preferences", "play"].includes(action)) navigate(action, id);
     if (action === "preferences-back") navigate(preferencesReturn.page, preferencesReturn.id);
@@ -1480,7 +1551,8 @@
       hudSize: form.querySelector('[name="hudSize"]').value,
       comfortablePace: form.querySelector('[name="comfortablePace"]').checked,
       largeText: form.querySelector('[name="largeText"]').checked,
-      sound: form.querySelector('[name="sound"]').checked
+      sound: form.querySelector('[name="sound"]').checked,
+      voiceGuidance: form.querySelector('[name="voiceGuidance"]').checked
     });
     if (!completed) {
       const input = form.querySelector('[name="name"]'), error = form.querySelector("#welcomeNameError");
@@ -1502,11 +1574,14 @@
     document.querySelector("#welcomeNameError").hidden = true;
   });
   document.addEventListener("change", (event) => {
-    const key = event.target.dataset.setting;
-    const value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
+    const key = event.target.dataset.setting, value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
     if (key && updateSetting(key, value)) {
       updateShell();
       notify(getStorageStatus() === "available" ? "Preferência salva." : "Preferência alterada nesta sessão. Não foi possível salvar.");
+      if (key === "voiceGuidance") {
+        if (value) speakText("Leitura em voz alta ativada. As instruções e os nomes dos controles serão lidos.");
+        else if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      }
     }
   });
   render();
